@@ -21,18 +21,30 @@ if os.environ.get("VERCEL_ENV") == "production" or os.environ.get("MIGRATE_ON_BU
         call_command("seed_demo", catalog_only=True)  # recette : œuvres de démonstration, aucun compte
     call_command("load_content")
 
-    # Premier compte administrateur : créé sans mot de passe ; un lien « nouveau mot de passe »
-    # est envoyé par e-mail (ou affiché dans le journal de build tant que l'e-mail n'est pas configuré).
+    # Premier compte administrateur. Aucun secret n'est jamais écrit dans le journal du build :
+    # - e-mail configuré (SMTP) : compte sans mot de passe + lien « nouveau mot de passe » envoyé par e-mail ;
+    # - sinon : mot de passe fourni par la variable temporaire DJANGO_SUPERUSER_PASSWORD (à supprimer ensuite).
     admin_email = os.environ.get("INITIAL_ADMIN_EMAIL", "").strip().lower()
     if admin_email:
+        from django.conf import settings
         from django.utils import timezone
 
         from apps.accounts.models import User
         from apps.accounts.services import send_password_reset
-        if not User.objects.filter(is_superuser=True).exists():
-            u = User.objects.create_superuser(admin_email, None, full_name="Adjougbe", email_verified=True,
-                                              terms_accepted_at=timezone.now())
-            send_password_reset(u)
-            print(f"Compte administrateur créé pour {admin_email} : lien de mot de passe envoyé (valable 1 h).")  # textes proposés, seulement là où rien n'a encore été écrit
-else:
-    print("Migrations ignorées (déploiement de prévisualisation).")
+        if User.objects.filter(is_superuser=True).exists():
+            print("Compte administrateur déjà présent : rien à créer.")
+        else:
+            real_email = settings.EMAIL_BACKEND.endswith("smtp.EmailBackend")
+            password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "")
+            if not real_email and not password:
+                print("Compte administrateur NON créé : configurer l'envoi d'e-mails (SMTP) "
+                      "ou définir DJANGO_SUPERUSER_PASSWORD, puis redéployer.")
+            else:
+                u = User.objects.create_superuser(admin_email, password or None, full_name="Adjougbe",
+                                                  terms_accepted_at=timezone.now())
+                if password:
+                    print("Compte administrateur créé avec le mot de passe fourni. "
+                          "Supprimer DJANGO_SUPERUSER_PASSWORD des variables Vercel.")
+                else:
+                    send_password_reset(u)
+                    print("Compte administrateur créé : lien pour choisir le mot de passe envoyé par e-mail.")

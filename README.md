@@ -57,7 +57,7 @@ Caddy obtient et renouvelle automatiquement le certificat HTTPS. Le même fichie
 Mise en place :
 1. Vercel → **Storage** → créer une base **Neon** et la connecter au projet.
 2. **Settings → Environment Variables** : copier les variables de `.env.vercel` (fichier local, non versionné) et renseigner `INITIAL_ADMIN_EMAIL`.
-3. Redéployer. Le build (`backend/vercel_build.py`) applique les migrations, charge le catalogue et les textes de recette, et crée le compte administrateur : le lien pour choisir son mot de passe arrive par e-mail ou, tant que l'e-mail n'est pas configuré, dans le journal du build.
+3. Redéployer. Le build (`backend/vercel_build.py`) applique les migrations, charge le catalogue et les textes de recette, et crée le compte administrateur : avec un envoi d'e-mails configuré (SMTP), un lien pour choisir le mot de passe est envoyé ; sinon, le mot de passe est pris dans la variable temporaire `DJANGO_SUPERUSER_PASSWORD`, à supprimer après le déploiement. Aucun lien ni mot de passe n'est écrit dans le journal du build.
 4. GitHub → **Settings → Secrets and variables → Actions** : `SITE_URL` (ex. `https://adjougbe.vercel.app`) et `CRON_SECRET` (même valeur que sur Vercel).
 
 Garde-fous : `PAYMENT_PROVIDER=simulated` est refusé quand `ENVIRONMENT=production` ; `seed_demo --catalog-only` ne crée aucun compte.
