@@ -23,7 +23,10 @@ VERCEL_HOSTS = [h for h in (env("VERCEL_URL", default=""), env("VERCEL_BRANCH_UR
 ENVIRONMENT = env("ENVIRONMENT")
 DEBUG = env("DEBUG")
 SECRET_KEY = env("SECRET_KEY", default="dev-insecure-change-me" if DEBUG else environ.Env.NOTSET)
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"]) + VERCEL_HOSTS
+# Sur Vercel, une requête n'atteint ce code que si elle vise un domaine du projet (adresses de déploiement,
+# alias *.vercel.app, domaine personnalisé déclaré dans ALLOWED_HOSTS) : le suffixe .vercel.app est sûr ici.
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"]) + VERCEL_HOSTS + (
+    [".vercel.app"] if ON_VERCEL else [])
 
 # Clé de chiffrement au repos du contenu des livres (Fernet, 32 octets base64).
 CONTENT_ENCRYPTION_KEY = env("CONTENT_ENCRYPTION_KEY", default="")
