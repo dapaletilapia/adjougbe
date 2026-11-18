@@ -1,4 +1,6 @@
-from rest_framework.decorators import api_view
+import io
+
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
 
 from .models import SiteSettings
@@ -73,3 +75,39 @@ def search(request):
                        "next": (lambda s: {"starts_at": s.starts_at, "seats_left": s.seats_left} if s else None)(
                            t.sessions.filter(starts_at__gte=now, is_cancelled=False).first())} for t in trainings],
     })
+
+
+def media_file(request, path):
+    """Sert un fichier public stocké en base (mode Vercel). Mis en cache par le CDN."""
+    from django.http import Http404, HttpResponse
+
+    from apps.core.models import StoredFile
+    obj = StoredFile.objects.filter(name=path, is_private=False).first()
+    if obj is None:
+        raise Http404
+    resp = HttpResponse(bytes(obj.content), content_type=obj.content_type or "application/octet-stream")
+    resp["Cache-Control"] = "public, max-age=86400, s-maxage=31536000"
+    resp["X-Content-Type-Options"] = "nosniff"
+    resp["Content-Security-Policy"] = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'"
+    return resp
+
+
+@api_view(["POST", "GET"])
+@authentication_classes([])
+@permission_classes([])
+def cron_scheduled(request):
+    """Tâches planifiées (relances, rappels) déclenchées par un ordonnanceur externe.
+
+    Protégé par CRON_SECRET (en-tête Authorization: Bearer …). Désactivé si la variable est vide.
+    """
+    import hmac
+
+    from django.conf import settings
+    from django.core.management import call_command
+    secret = settings.CRON_SECRET
+    given = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    if not secret or not hmac.compare_digest(given, secret):
+        return Response(status=404)
+    out = io.StringIO()
+    call_command("run_scheduled", stdout=out)
+    return Response({"ok": True, "log": out.getvalue()[-2000:]})

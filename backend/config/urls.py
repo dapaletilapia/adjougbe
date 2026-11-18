@@ -13,6 +13,7 @@ urlpatterns = [
     path("apercu/", seo.share_preview),
     path("apercu/<path:path>", seo.share_preview),
     path("api/health/", core.health),
+    path("api/cron/scheduled/", core.cron_scheduled),
     path("api/settings/", core.public_settings),
     path("api/search/", core.search),
     path("api/pages/<slug:key>/", core.page),
@@ -27,5 +28,7 @@ urlpatterns = [
     path("api/backoffice/", include("apps.backoffice.urls")),
 ]
 
-if settings.DEBUG:
+if settings.FILE_STORAGE == "database":
+    urlpatterns.append(path("media/<path:path>", core.media_file))
+elif settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

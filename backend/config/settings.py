@@ -15,15 +15,22 @@ env = environ.Env(
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
+# Sur Vercel, la plateforme fournit VERCEL=1, VERCEL_ENV et les noms de domaine du déploiement.
+ON_VERCEL = bool(env("VERCEL", default=""))
+VERCEL_HOSTS = [h for h in (env("VERCEL_URL", default=""), env("VERCEL_BRANCH_URL", default=""),
+                            env("VERCEL_PROJECT_PRODUCTION_URL", default="")) if h]
+
 ENVIRONMENT = env("ENVIRONMENT")
 DEBUG = env("DEBUG")
 SECRET_KEY = env("SECRET_KEY", default="dev-insecure-change-me" if DEBUG else environ.Env.NOTSET)
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"]) + VERCEL_HOSTS
 
 # Clé de chiffrement au repos du contenu des livres (Fernet, 32 octets base64).
 CONTENT_ENCRYPTION_KEY = env("CONTENT_ENCRYPTION_KEY", default="")
 
-FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")
+FRONTEND_URL = env("FRONTEND_URL", default=(
+    f"https://{env('VERCEL_PROJECT_PRODUCTION_URL')}" if env("VERCEL_PROJECT_PRODUCTION_URL", default="")
+    else "http://localhost:5173"))
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -50,6 +57,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "apps.core.seo.SharePreviewMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -80,6 +88,8 @@ TEMPLATES = [
 
 # PostgreSQL en recette/production via DATABASE_URL ; SQLite par défaut en développement.
 DATABASES = {"default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")}
+if ON_VERCEL:
+    DATABASES["default"]["CONN_MAX_AGE"] = 0  # fonctions éphémères : pas de connexion persistante (Neon pool)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
@@ -102,10 +112,17 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# Fichiers : disque (Docker) ou base de données (Vercel, sans disque persistant).
+FILE_STORAGE = env("FILE_STORAGE", default="database" if ON_VERCEL else "filesystem")
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "private": {"BACKEND": "django.core.files.storage.FileSystemStorage",
+                "OPTIONS": {"location": env("PRIVATE_STORAGE_ROOT", default=str(BASE_DIR / "private"))}},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
+if FILE_STORAGE == "database":
+    STORAGES["default"] = {"BACKEND": "apps.core.storage.DatabaseStorage"}
+    STORAGES["private"] = {"BACKEND": "apps.core.storage.DatabaseStorage", "OPTIONS": {"private": True}}
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(env("MEDIA_ROOT", default=str(BASE_DIR / "media")))
 # Stockage privé : jamais servi par une URL publique (contenu des livres, pièces jointes de formulaires).
@@ -117,7 +134,8 @@ SESSION_INACTIVITY_TIMEOUT = env.int("SESSION_INACTIVITY_TIMEOUT", default=60 * 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
-CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=["http://localhost:5173", "http://127.0.0.1:5173"])
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=["http://localhost:5173", "http://127.0.0.1:5173"]) + [
+    f"https://{h}" for h in VERCEL_HOSTS]
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:5173", "http://127.0.0.1:5173"])
 CORS_ALLOW_CREDENTIALS = True
 
@@ -166,10 +184,15 @@ GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", default="")
 # --- Paiement ----------------------------------------------------------------
 # "simulated" en développement ; "cinetpay" en recette (mode test) et production.
 PAYMENT_PROVIDER = env("PAYMENT_PROVIDER", default="simulated")
+if ENVIRONMENT == "production" and PAYMENT_PROVIDER == "simulated":
+    # Le paiement simulé donne les livres gratuitement : interdit sur le site public.
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("PAYMENT_PROVIDER=simulated est interdit en production (utiliser cinetpay).")
 CINETPAY_API_KEY = env("CINETPAY_API_KEY", default="")
 CINETPAY_SITE_ID = env("CINETPAY_SITE_ID", default="")
 CINETPAY_SECRET_KEY = env("CINETPAY_SECRET_KEY", default="")
-BACKEND_PUBLIC_URL = env("BACKEND_PUBLIC_URL", default="http://localhost:8000")
+BACKEND_PUBLIC_URL = env("BACKEND_PUBLIC_URL", default=FRONTEND_URL if ON_VERCEL else "http://localhost:8000")
+CRON_SECRET = env("CRON_SECRET", default="")
 
 LOGGING = {
     "version": 1,

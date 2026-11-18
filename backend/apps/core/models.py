@@ -92,3 +92,21 @@ class ReleaseNote(models.Model):
 
     def __str__(self):
         return self.version
+
+
+class StoredFile(models.Model):
+    """Fichier conservé en base (hébergement sans disque persistant, ex. Vercel).
+
+    Les fichiers publics (couvertures, images du blog) sont servis par /media/ ;
+    les fichiers privés (pièces jointes des formulaires) ne le sont jamais.
+    """
+
+    name = models.CharField(max_length=255, unique=True)
+    content = models.BinaryField()
+    content_type = models.CharField(max_length=100, blank=True)
+    size = models.PositiveIntegerField(default=0)
+    is_private = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name

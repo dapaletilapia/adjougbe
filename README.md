@@ -42,6 +42,26 @@ docker compose exec backend python manage.py load_content   # textes proposés (
 
 Caddy obtient et renouvelle automatiquement le certificat HTTPS. Le même fichier sert pour la recette (`ENVIRONMENT=staging`, paiement CinetPay en mode test) : le site de recette n'est pas indexé par les moteurs (`robots.txt`).
 
+## Héberger sur Vercel
+
+`vercel.json` déclare deux services dans un même projet : le front React (`frontend/`) et l'API Django (`backend/`), sur le même domaine. Différences avec Docker :
+
+| Docker | Vercel |
+|---|---|
+| PostgreSQL dans un conteneur | Neon (Vercel Marketplace), `DATABASE_URL` ajoutée automatiquement |
+| Fichiers sur disque | Fichiers en base (`FILE_STORAGE=database`, automatique sur Vercel), images servies par `/media/` et mises en cache par le CDN |
+| Conteneur `scheduler` | GitHub Actions (`.github/workflows/scheduled.yml`) appelle `/api/cron/scheduled/` toutes les 10 min |
+| Nginx sert les aperçus aux robots | Règle `user-agent` de `vercel.json` + `SharePreviewMiddleware` |
+| Conteneur `backup` | Restauration à un instant donné de Neon |
+
+Mise en place :
+1. Vercel → **Storage** → créer une base **Neon** et la connecter au projet.
+2. **Settings → Environment Variables** : copier les variables de `.env.vercel` (fichier local, non versionné) et renseigner `INITIAL_ADMIN_EMAIL`.
+3. Redéployer. Le build (`backend/vercel_build.py`) applique les migrations, charge le catalogue et les textes de recette, et crée le compte administrateur : le lien pour choisir son mot de passe arrive par e-mail ou, tant que l'e-mail n'est pas configuré, dans le journal du build.
+4. GitHub → **Settings → Secrets and variables → Actions** : `SITE_URL` (ex. `https://adjougbe.vercel.app`) et `CRON_SECRET` (même valeur que sur Vercel).
+
+Garde-fous : `PAYMENT_PROVIDER=simulated` est refusé quand `ENVIRONMENT=production` ; `seed_demo --catalog-only` ne crée aucun compte.
+
 ## Sauvegardes
 
 Le conteneur `backup` sauvegarde chaque nuit à 3 h (heure d'Abidjan) la base, les médias et le contenu chiffré des livres dans `BACKUP_DIR` (par défaut `./backups`), avec 14 jours de rétention et des empreintes SHA-256.

@@ -55,24 +55,28 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--admin-email", default="admin@adjougbe.local")
         parser.add_argument("--admin-password", default="Adjougbe-Demo-2026!")
+        parser.add_argument("--catalog-only", action="store_true",
+                            help="Œuvres, formulaires et articles de démonstration, sans aucun compte (site en ligne).")
 
     def handle(self, *args, **o):
         if settings.ENVIRONMENT == "production":
             raise CommandError("Interdit en production.")
         now = timezone.now()
 
-        admin, created = User.objects.get_or_create(email=o["admin_email"], defaults={
-            "full_name": "Adjougbe", "role": User.Role.ADMIN, "is_staff": True, "is_superuser": True,
-            "email_verified": True, "terms_accepted_at": now})
-        if created:
-            admin.set_password(o["admin_password"])
-            admin.save()
-        reader, created = User.objects.get_or_create(email="lecteur@adjougbe.local", defaults={
-            "full_name": "Awa Koné", "city": "Abidjan", "email_verified": True, "terms_accepted_at": now,
-            "phone": "+225 07 00 00 00 00"})
-        if created:
-            reader.set_password("Lecteur-Demo-2026!")
-            reader.save()
+        admin = None
+        if not o["catalog_only"]:
+            admin, created = User.objects.get_or_create(email=o["admin_email"], defaults={
+                "full_name": "Adjougbe", "role": User.Role.ADMIN, "is_staff": True, "is_superuser": True,
+                "email_verified": True, "terms_accepted_at": now})
+            if created:
+                admin.set_password(o["admin_password"])
+                admin.save()
+            reader, created = User.objects.get_or_create(email="lecteur@adjougbe.local", defaults={
+                "full_name": "Awa Koné", "city": "Abidjan", "email_verified": True, "terms_accepted_at": now,
+                "phone": "+225 07 00 00 00 00"})
+            if created:
+                reader.set_password("Lecteur-Demo-2026!")
+                reader.save()
 
         access_form, _ = Form.objects.get_or_create(slug="acces-papos-de-tiekar", defaults={
             "title": "Accès offert — Les Papos de Tiékar", "purpose": Form.Purpose.WORK_ACCESS,
@@ -204,6 +208,9 @@ class Command(BaseCommand):
             st.save()
         ReleaseNote.objects.get_or_create(version="1.0.0", defaults={
             "released_at": now.date(), "content": "Première version : vendre et lire.", "delivered_by": "All'Digit"})
+        if o["catalog_only"]:
+            self.stdout.write(self.style.SUCCESS("Catalogue de démonstration prêt (aucun compte créé)."))
+            return
         self.stdout.write(self.style.SUCCESS(
             f"Démo prête. Admin : {o['admin_email']} / {o['admin_password']} — "
             "Lecteur : lecteur@adjougbe.local / Lecteur-Demo-2026!"))

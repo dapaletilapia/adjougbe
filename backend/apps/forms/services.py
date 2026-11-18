@@ -42,13 +42,9 @@ def clean_submission(form: Form, data: dict, files=None) -> dict:
             if ext not in ALLOWED_UPLOADS or upload.size > MAX_UPLOAD:
                 errors[f.key] = "Fichier refusé (PDF, image ou Word, 5 Mo maximum)."
                 continue
-            dest_dir = settings.PRIVATE_STORAGE_ROOT / "forms" / form.slug
-            dest_dir.mkdir(parents=True, exist_ok=True)
-            name = f"{uuid.uuid4().hex}{ext}"
-            with open(dest_dir / name, "wb") as out:
-                for chunk in upload.chunks():
-                    out.write(chunk)
-            cleaned[f.key] = {"file": f"forms/{form.slug}/{name}", "name": upload.name[:120]}
+            from django.core.files.storage import storages
+            name = storages["private"].save(f"forms/{form.slug}/{uuid.uuid4().hex}{ext}", upload)
+            cleaned[f.key] = {"file": name, "name": upload.name[:120]}
             continue
         if empty:
             if f.required:

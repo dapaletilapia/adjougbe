@@ -3,6 +3,7 @@
 Le site est une application React : les robots des réseaux (WhatsApp, Facebook, X…) ne lisent pas le JavaScript.
 Nginx leur sert donc ces pages HTML minimales, avec les balises Open Graph de chaque œuvre, article ou formation.
 """
+import re
 from html import escape
 
 from django.conf import settings
@@ -89,3 +90,22 @@ def robots(request):
     if settings.ENVIRONMENT != "production":
         lines = ["User-agent: *", "Disallow: /"]  # recette et développement : non indexés
     return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")
+
+
+PREVIEW_BOTS = re.compile(r"facebookexternalhit|facebot|whatsapp|twitterbot|linkedinbot|slackbot|telegrambot|"
+                          r"discordbot|pinterest|skypeuripreview|googlebot|bingbot", re.I)
+BACKEND_PREFIXES = ("/api/", "/django-admin/", "/static/", "/media/", "/apercu/", "/sitemap.xml", "/robots.txt")
+
+
+class SharePreviewMiddleware:
+    """Hébergement Vercel : les pages du site arrivent ici quand un robot de réseau social les demande
+    (règle de réécriture dans vercel.json). On lui sert l'aperçu, comme le fait Nginx en Docker."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if (request.method == "GET" and not request.path.startswith(BACKEND_PREFIXES)
+                and PREVIEW_BOTS.search(request.headers.get("User-Agent", ""))):
+            return share_preview(request, request.path)
+        return self.get_response(request)

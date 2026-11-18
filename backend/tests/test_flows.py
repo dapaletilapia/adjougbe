@@ -357,3 +357,39 @@ class SecurityReviewTests(BackofficeTests):
         png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(b"")) + chunk(b"IEND", b"")
         r = self.client.post("/api/backoffice/media/", {"file": SimpleUploadedFile("b.png", png, content_type="image/png")})
         self.assertEqual(r.status_code, 400)
+
+
+class VercelModeTests(Base):
+    """Hébergement Vercel : fichiers en base, tâches planifiées par appel HTTP, aperçus pour les robots."""
+
+    def test_database_storage_public_and_private(self):
+        from django.core.files.base import ContentFile
+        from django.test import RequestFactory
+
+        from apps.core.storage import DatabaseStorage
+        from apps.core.views import media_file
+        pub, priv = DatabaseStorage(), DatabaseStorage(private=True)
+        name = pub.save("covers/a.png", ContentFile(b"\x89PNG-data", name="a.png"))
+        self.assertEqual(pub.url(name), "/media/covers/a.png")
+        self.assertEqual(pub.open(name).read(), b"\x89PNG-data")
+        self.assertNotEqual(pub.save("covers/a.png", ContentFile(b"x", name="a.png")), name)  # pas d'écrasement
+        r = media_file(RequestFactory().get("/media/" + name), name)
+        self.assertEqual((r.status_code, r["Content-Type"]), (200, "image/png"))
+        secret = priv.save("forms/x/cv.pdf", ContentFile(b"%PDF", name="cv.pdf"))
+        from django.http import Http404
+        with self.assertRaises(Http404):
+            media_file(RequestFactory().get("/media/" + secret), secret)
+
+    def test_cron_endpoint_requires_secret(self):
+        with self.settings(CRON_SECRET=""):
+            self.assertEqual(self.client.post("/api/cron/scheduled/").status_code, 404)
+        with self.settings(CRON_SECRET="s3cret-cron"):
+            self.assertEqual(self.client.post("/api/cron/scheduled/", HTTP_AUTHORIZATION="Bearer faux").status_code, 404)
+            r = self.client.post("/api/cron/scheduled/", HTTP_AUTHORIZATION="Bearer s3cret-cron")
+            self.assertEqual(r.status_code, 200)
+
+    def test_bot_gets_share_preview(self):
+        make_work(slug="les-punchlines-tome-1", title="Les Punchlines — Tome 1")
+        r = self.client.get("/livres/les-punchlines-tome-1", HTTP_USER_AGENT="WhatsApp/2.23")
+        self.assertContains(r, 'property="og:title" content="Les Punchlines — Tome 1 — Adjougbe"')
+        self.assertEqual(self.client.get("/api/health/", HTTP_USER_AGENT="WhatsApp/2.23").status_code, 200)
