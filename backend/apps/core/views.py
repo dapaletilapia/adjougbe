@@ -45,8 +45,10 @@ def search(request):
         return Response({"q": q, "works": [], "posts": [], "trainings": []})
     works = Work.objects.filter(status__in=["published", "preorder"]).filter(
         Q(title__icontains=q) | Q(summary__icontains=q) | Q(subtitle__icontains=q))[:10]
+    # Le corps des articles réservés aux membres n'est cherché (ni cité) que pour un lecteur connecté.
+    body_match = Q(body__icontains=q) if request.user.is_authenticated else Q(body__icontains=q, members_only=False)
     posts = Post.objects.published().filter(
-        Q(title__icontains=q) | Q(excerpt__icontains=q) | Q(quote__icontains=q) | Q(body__icontains=q)).select_related("category")[:20]
+        Q(title__icontains=q) | Q(excerpt__icontains=q) | Q(quote__icontains=q) | body_match).select_related("category")[:20]
     trainings = Training.objects.filter(is_published=True).filter(
         Q(title__icontains=q) | Q(summary__icontains=q) | Q(theme__icontains=q))[:10]
 
@@ -66,7 +68,7 @@ def search(request):
                    "snippet": snippet(w.summary)} for w in works],
         "posts": [{"slug": p.slug, "title": p.title, "kind": p.kind, "quote": p.quote,
                    "category": p.category.name if p.category else p.get_kind_display(),
-                   "cover": p.cover.url if p.cover else None, "snippet": snippet(p.quote or p.excerpt or p.body)} for p in posts],
+                   "cover": p.cover.url if p.cover else None, "snippet": snippet(p.quote or p.excerpt or ("" if p.members_only and not request.user.is_authenticated else p.body))} for p in posts],
         "trainings": [{"slug": t.slug, "title": t.title, "format": t.get_format_display(),
                        "next": (lambda s: {"starts_at": s.starts_at, "seats_left": s.seats_left} if s else None)(
                            t.sessions.filter(starts_at__gte=now, is_cancelled=False).first())} for t in trainings],

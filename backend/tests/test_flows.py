@@ -283,3 +283,64 @@ class ClientExtrasTests(Base):
         make_work(slug="brouillon", title="Punchlines secrètes", status=Work.Status.DRAFT)
         titles = [w["title"] for w in self.client.get("/api/search/?q=punchlines").json()["works"]]
         self.assertEqual(titles, ["Punchlines T1"])
+
+
+class SecurityReviewTests(BackofficeTests):
+    """Correctifs de la revue de sécurité du 18/11/2026."""
+
+    def _staff(self, role):
+        u = User.objects.create_user(f"{role}@example.com", "Staff-solide-2026", full_name=role, role=role,
+                                     email_verified=True)
+        self.client.post("/api/auth/logout/")
+        self.login(email=u.email, password="Staff-solide-2026")
+        secret = self.client.post("/api/auth/otp/setup/").json()["secret"]
+        self.client.post("/api/auth/otp/verify/", {"code": pyotp.TOTP(secret).now()}, content_type="application/json")
+        return u
+
+    def test_public_search_does_not_leak_members_only_body(self):
+        from django.utils import timezone
+
+        from apps.blog.models import Post
+        Post.objects.create(title="Réservé", slug="reserve", body="<p>motsecretmembre ici</p>", members_only=True,
+                            status=Post.Status.PUBLISHED, published_at=timezone.now())
+        self.assertEqual(self.client.get("/api/search/?q=motsecretmembre").json()["posts"], [])
+        self.login()
+        self.assertEqual(len(self.client.get("/api/search/?q=motsecretmembre").json()["posts"]), 1)
+
+    def test_formula_neutralised_in_csv_and_xlsx(self):
+        from apps.backoffice.views import _safe_csv, export_rows
+        self.assertEqual(_safe_csv("\t=1+1"), "'\t=1+1")
+        import openpyxl
+        r = export_rows("x", ["a"], [["=HYPERLINK(\"http://evil\")"]], "xlsx")
+        ws = openpyxl.load_workbook(io.BytesIO(r.content)).active
+        self.assertTrue(str(ws["A2"].value).startswith("'"))
+
+    def test_assistant_cannot_close_devices_or_see_orders_in_search(self):
+        from apps.shop.services import create_order
+        create_order(self.user, [{"type": "work", "id": make_work().pk}], "wave")
+        d = DeviceSession.objects.create(user=self.user, session_key="k1", label="Tél")
+        self._staff("assistant")
+        r = self.client.post(f"/api/backoffice/users/{self.user.pk}/devices/{d.pk}/close/")
+        self.assertEqual(r.status_code, 403)
+        self.assertTrue(DeviceSession.objects.filter(pk=d.pk).exists())
+        types = {x["type"] for x in self.client.get("/api/backoffice/search/?q=awa").json()["results"]}
+        self.assertNotIn("Commande", types)
+        self.assertIn("Utilisateur", types)
+
+    def test_editor_dashboard_hides_revenue(self):
+        make_work()
+        self._staff("editor")
+        by_work = self.client.get("/api/backoffice/dashboard/").json()["by_work"]
+        self.assertTrue(by_work and all("revenue" not in w for w in by_work))
+
+    def test_upload_reencoded_with_safe_name(self):
+        from PIL import Image
+        self._otp_login()
+        buf = io.BytesIO()
+        Image.new("RGB", (4, 4), "red").save(buf, "PNG")
+        buf.seek(0)
+        buf.name = "x.html"
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        f = SimpleUploadedFile("evil.html", buf.getvalue(), content_type="image/png")
+        url = self.client.post("/api/backoffice/media/", {"file": f}).json()["url"]
+        self.assertRegex(url, r"/uploads/\d{4}/\d{2}/[0-9a-f]{32}\.png$")

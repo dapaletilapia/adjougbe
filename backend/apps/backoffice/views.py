@@ -46,7 +46,7 @@ def export_rows(filename: str, headers: list[str], rows: list[list], fmt: str = 
         ws = wb.active
         ws.append(headers)
         for r in rows:
-            ws.append([str(v) if isinstance(v, (list, dict)) else v for v in r])
+            ws.append([v if v is None or isinstance(v, (int, float)) else _safe_csv(v) for v in r])
         buf = io.BytesIO()
         wb.save(buf)
         resp = HttpResponse(buf.getvalue(),
@@ -67,7 +67,7 @@ def export_rows(filename: str, headers: list[str], rows: list[list], fmt: str = 
 def _safe_csv(v):
     """Neutralise l'injection de formules dans Excel."""
     v = ", ".join(map(str, v)) if isinstance(v, list) else str(v)
-    return "'" + v if v[:1] in ("=", "+", "-", "@") else v
+    return "'" + v if v[:1] in ("=", "+", "-", "@", "\t", "\r") else v
 
 
 def _dt(v):
@@ -168,6 +168,8 @@ def dashboard(request):
     if not has_scope(request.user, "finance") and not has_scope(request.user, "orders"):
         for k in ("sales_today", "sales_month", "sales_prev_month", "series", "by_method", "latest_orders"):
             data.pop(k, None)
+        for w in data["by_work"]:
+            w.pop("revenue", None)
     return Response(data)
 
 
@@ -434,6 +436,7 @@ class UserViewSet(BO, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.U
 
     @action(detail=True, methods=["post"], url_path="devices/(?P<device_id>[0-9]+)/close")
     def close_device(self, request, pk=None, device_id=None):
+        self._require_admin()
         u = self.get_object()
         d = u.devices.filter(pk=device_id).first()
         if d:
@@ -763,8 +766,21 @@ def media_upload(request):
         Image.open(f).verify()
     except Exception:
         return Response({"detail": "Image illisible."}, status=400)
+    # Ré-encodage : le fichier enregistré est toujours une vraie image, sous un nom et une extension choisis ici.
+    import uuid
+    from django.core.files.base import ContentFile
     f.seek(0)
-    path = default_storage.save(f"uploads/{timezone.now():%Y/%m}/{f.name}", f)
+    try:
+        img = Image.open(f)
+        img.load()
+    except Exception:
+        return Response({"detail": "Image illisible."}, status=400)
+    fmt = {"JPEG": ("JPEG", "jpg"), "PNG": ("PNG", "png"), "GIF": ("GIF", "gif")}.get(img.format, ("WEBP", "webp"))
+    if fmt[0] == "JPEG" and img.mode not in ("RGB", "L"):
+        img = img.convert("RGB")
+    out = io.BytesIO()
+    img.save(out, fmt[0])
+    path = default_storage.save(f"uploads/{timezone.now():%Y/%m}/{uuid.uuid4().hex}.{fmt[1]}", ContentFile(out.getvalue()))
     return Response({"url": default_storage.url(path)}, status=201)
 
 
@@ -813,16 +829,21 @@ def search(request):
     if len(q) < 2:
         return Response({"results": []})
     res = []
-    for w in Work.objects.filter(title__icontains=q)[:5]:
-        res.append({"type": "Œuvre", "label": w.title, "path": f"/admin/oeuvres/{w.pk}"})
-    for o in Order.objects.filter(Q(reference__icontains=q) | Q(user__email__icontains=q)).select_related("user")[:5]:
-        res.append({"type": "Commande", "label": f"{o.reference} — {o.user.email}", "path": f"/admin/commandes?q={o.reference}"})
+    u_ = request.user
+    if has_scope(u_, "works"):
+        for w in Work.objects.filter(title__icontains=q)[:5]:
+            res.append({"type": "Œuvre", "label": w.title, "path": f"/admin/oeuvres/{w.pk}"})
+    if has_scope(u_, "orders") or has_scope(u_, "finance"):
+        for o in Order.objects.filter(Q(reference__icontains=q) | Q(user__email__icontains=q)).select_related("user")[:5]:
+            res.append({"type": "Commande", "label": f"{o.reference} — {o.user.email}", "path": f"/admin/commandes?q={o.reference}"})
     if has_scope(request.user, "users_read"):
         for u in User.objects.filter(Q(email__icontains=q) | Q(full_name__icontains=q))[:5]:
             res.append({"type": "Utilisateur", "label": f"{u.full_name} — {u.email}", "path": f"/admin/utilisateurs/{u.pk}"})
-    for p in Post.objects.filter(title__icontains=q)[:5]:
-        res.append({"type": "Article", "label": p.title, "path": f"/admin/blog/{p.pk}"})
-    for t in Training.objects.filter(title__icontains=q)[:5]:
-        res.append({"type": "Formation", "label": t.title, "path": f"/admin/formations/{t.pk}"})
+    if has_scope(u_, "blog"):
+        for p in Post.objects.filter(title__icontains=q)[:5]:
+            res.append({"type": "Article", "label": p.title, "path": f"/admin/blog/{p.pk}"})
+    if has_scope(u_, "trainings"):
+        for t in Training.objects.filter(title__icontains=q)[:5]:
+            res.append({"type": "Formation", "label": t.title, "path": f"/admin/formations/{t.pk}"})
     return Response({"results": res})
 
