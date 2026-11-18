@@ -344,3 +344,16 @@ class SecurityReviewTests(BackofficeTests):
         f = SimpleUploadedFile("evil.html", buf.getvalue(), content_type="image/png")
         url = self.client.post("/api/backoffice/media/", {"file": f}).json()["url"]
         self.assertRegex(url, r"/uploads/\d{4}/\d{2}/[0-9a-f]{32}\.png$")
+
+    def test_upload_rejects_decompression_bomb(self):
+        import struct
+        import zlib
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self._otp_login()
+        # PNG de 10 000 × 10 000 px (100 Mpx) ne pesant que quelques octets : seul l'en-tête est lu.
+        ihdr = struct.pack(">IIBBBBB", 10000, 10000, 8, 0, 0, 0, 0)
+        chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))
+        png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(b"")) + chunk(b"IEND", b"")
+        r = self.client.post("/api/backoffice/media/", {"file": SimpleUploadedFile("b.png", png, content_type="image/png")})
+        self.assertEqual(r.status_code, 400)

@@ -772,7 +772,10 @@ def media_upload(request):
     f.seek(0)
     try:
         img = Image.open(f)
-        img.load()
+        # Dimensions lues dans l'en-tête, avant décompression : refuse les « bombes » d'images.
+        if img.width * img.height > 40_000_000 or getattr(img, "n_frames", 1) > 200:
+            return Response({"detail": "Image trop grande (40 mégapixels max)."}, status=400)
+        img.load()  # GIF animé : seule la première image est conservée
     except Exception:
         return Response({"detail": "Image illisible."}, status=400)
     fmt = {"JPEG": ("JPEG", "jpg"), "PNG": ("PNG", "png"), "GIF": ("GIF", "gif")}.get(img.format, ("WEBP", "webp"))
