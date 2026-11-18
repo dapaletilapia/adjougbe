@@ -15,3 +15,5 @@ frontend/dist/
 .env.docker
 backups/
 .env.vercel
+.vercel
+.env*
