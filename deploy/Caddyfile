@@ -1,0 +1,13 @@
+# Certificat HTTPS obtenu et renouvelé automatiquement par Caddy.
+{$DOMAIN}, www.{$DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	@www host www.{$DOMAIN}
+	redir @www https://{$DOMAIN}{uri} permanent
+	reverse_proxy frontend:80 {
+		header_up X-Forwarded-Proto {scheme}
+	}
+}

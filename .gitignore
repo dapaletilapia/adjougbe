@@ -1,0 +1,16 @@
+# Secrets et données locales
+.env
+*.sqlite3
+backend/media/
+backend/private/
+backend/staticfiles/
+# Python
+.venv/
+__pycache__/
+*.pyc
+# Front
+node_modules/
+frontend/dist/
+.DS_Store
+.env.docker
+backups/

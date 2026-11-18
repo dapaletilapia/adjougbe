@@ -1,0 +1,25 @@
+# Production et recette : HTTPS automatique (Let's Encrypt) via Caddy, devant le front Nginx.
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Prérequis : le nom de domaine (DOMAIN dans .env) pointe vers le serveur, ports 80 et 443 ouverts.
+services:
+  frontend:
+    ports: !reset []   # plus exposé directement : seul Caddy reçoit le trafic
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Définir DOMAIN dans .env (ex. adjougbe.ci)}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

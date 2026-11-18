@@ -1,0 +1,89 @@
+# Plateforme Adjougbe : PostgreSQL + API Django + tâches planifiées + front React (Nginx).
+#   cp .env.example .env && cp .env.docker.example .env.docker   (puis renseigner les secrets)
+#   docker compose up -d --build
+#   docker compose exec backend python manage.py createsuperuser
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-adjougbe}
+      POSTGRES_USER: ${POSTGRES_USER:-adjougbe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Définir POSTGRES_PASSWORD dans .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env.docker
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-adjougbe}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-adjougbe}
+      RUN_MIGRATIONS: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - media:/data/media
+      - private:/data/private
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/health/')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # Relances des paniers abandonnés et rappels de formation, toutes les 10 minutes.
+  scheduler:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env.docker
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-adjougbe}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-adjougbe}
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - media:/data/media
+      - private:/data/private
+    command: ["sh", "-c", "while true; do python manage.py run_scheduled; sleep 600; done"]
+
+  # Sauvegarde quotidienne à 3 h (heure d'Abidjan) : base + médias + contenu privé, conservée 14 jours.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-adjougbe}
+      POSTGRES_USER: ${POSTGRES_USER:-adjougbe}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      TZ: Africa/Abidjan
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts:ro
+      - media:/data/media
+      - private:/data/private
+      - ${BACKUP_DIR:-./backups}:/backups
+    command: ["sh", "-c", "while true; do if [ \"$$(date +%H%M)\" = \"0300\" ]; then sh /scripts/backup.sh; sleep 61; fi; sleep 30; done"]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - media:/data/media:ro
+
+volumes:
+  pgdata:
+  media:
+  private:
