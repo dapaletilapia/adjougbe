@@ -33,3 +33,10 @@ export function downloadIcs({ title, start, end, location, description }: { titl
   a.download = 'formation-adjougbe.ics'
   a.click()
 }
+
+/** « 2250700000000 » → « +225 07 00 00 00 00 » (numéros ivoiriens) ; autres formats laissés lisibles. */
+export function formatPhone(raw: string) {
+  const d = raw.replace(/\D/g, '')
+  const ci = d.match(/^(225)(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/)
+  return ci ? `+${ci.slice(1).join(' ')}` : `+${d}`
+}

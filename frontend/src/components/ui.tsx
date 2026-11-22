@@ -161,7 +161,7 @@ export function PayLogo({ method, size = 34 }: { method: string; size?: number }
   const [failed, setFailed] = useState(false)
   const [label, bg, fg] = PAY_FALLBACK[method] ?? ['?', '#E6E7EA', '#0E0F13']
   return (
-    <span className={`grid shrink-0 place-items-center overflow-hidden rounded-[9px] bg-white font-bold shadow-[0_0_0_1px_rgba(14,15,19,.06)] ${size < 30 ? "text-[7px]" : "text-[10px]"}`}
+    <span className={`grid shrink-0 place-items-center overflow-hidden rounded-[9px] bg-white font-bold shadow-[0_0_0_1px_rgba(14,15,19,.06)] ${size < 30 ? "text-[7px]" : "text-[12px]"}`}
       style={{ width: size, height: size, ...(failed ? { background: bg, color: fg } : {}) }}>
       {failed ? label : <img src={`/pay/${method}.png`} alt="" className="h-full w-full object-contain p-[2px]" onError={() => setFailed(true)} />}
     </span>

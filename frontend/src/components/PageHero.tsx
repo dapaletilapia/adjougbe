@@ -6,13 +6,13 @@ export function PageHero({ crumbs, eyebrow, title, accent, text, base = 'var(--b
   crumbs: [string, string?][]; eyebrow?: string; title: ReactNode; accent?: ReactNode; text?: ReactNode; base?: string; children?: ReactNode
 }) {
   return (
-    <section className="hero-grad relative overflow-hidden text-white">
+    <section className="hero-grad relative mb-10 overflow-hidden text-white md:mb-14">
       <div className="pointer-events-none absolute inset-0" style={{ background: 'linear-gradient(105deg,transparent 40%,rgba(255,255,255,.09) 48%,transparent 58%)' }} />
       <div className="pointer-events-none absolute inset-0 opacity-[.045]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '92px 92px', maskImage: 'linear-gradient(100deg,#000,transparent 60%)', WebkitMaskImage: 'linear-gradient(100deg,#000,transparent 60%)' }} />
       <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(480px 300px at 12% 100%,rgba(255,107,41,.22),transparent 70%)' }} />
       <img src="/mark-mono.svg" alt="" className="pointer-events-none absolute top-8 right-6 hidden h-[300px] w-[300px] opacity-[.07] md:block lg:right-20" />
-      <div className="container-x relative max-w-[1180px] pt-12 pb-24 md:pt-16 md:pb-[120px]">
-        <nav aria-label="Fil d'Ariane" className="text-[13px] text-white/70">
+      <div className="container-x relative max-w-[1180px] pt-12 pb-16 md:pt-16 md:pb-20">
+        <nav aria-label="Fil d'Ariane" className="text-[14px] text-white/70">
           {crumbs.map(([label, to], i) => (
             <span key={label}>{i > 0 && ' / '}{to ? <Link to={to} className="hover:text-white">{label}</Link> : <span aria-current="page">{label}</span>}</span>
           ))}
@@ -30,8 +30,8 @@ export function PageHero({ crumbs, eyebrow, title, accent, text, base = 'var(--b
           {children}
         </div>
       </div>
-      <svg viewBox="0 0 1440 80" preserveAspectRatio="none" className="absolute -bottom-px left-0 h-10 w-full md:h-20" aria-hidden="true">
-        <path d="M0 0 Q720 160 1440 0 L1440 80 L0 80 Z" fill={base} />
+      <svg viewBox="0 0 1440 40" preserveAspectRatio="none" className="absolute -bottom-px left-0 h-4 w-full md:h-7" aria-hidden="true">
+        <path d="M0 0 Q720 80 1440 0 L1440 40 L0 40 Z" fill={base} />
       </svg>
     </section>
   )

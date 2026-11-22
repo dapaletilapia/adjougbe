@@ -71,7 +71,7 @@ export function DynamicForm({ form, query = '', submitLabel = 'Envoyer', onDone 
           {errors[f.key] && <span className="err">{errors[f.key]}</span>}
         </div>
       ))}
-      <label className="flex items-start gap-3 rounded-[10px] bg-paper p-3.5 text-[13px] leading-relaxed">
+      <label className="flex items-start gap-3 rounded-[10px] bg-paper p-3.5 text-[14px] leading-relaxed">
         <input type="checkbox" className="mt-0.5 h-[18px] w-[18px] accent-blue" checked={!!values._consent} onChange={(e) => set('_consent', e.target.checked)} />
         <span>{form.consent_text} <a href="/confidentialite" className="link" target="_blank">Politique de confidentialité</a></span>
       </label>
@@ -99,7 +99,7 @@ function FieldInput({ field: f, value, onChange, onFile }: { field: FormField; v
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-labelledby={`l-${f.key}`}>
             {f.options.map((o) => (
               <button type="button" role="radio" aria-checked={value === o} key={o} onClick={() => onChange(o)}
-                className={`rounded-full px-3.5 py-2 text-[13px] ${value === o ? 'bg-blue text-white' : 'bg-[#F2F3F5]'}`}>{o}</button>
+                className={`rounded-full px-3.5 py-2 text-[14px] ${value === o ? 'bg-blue text-white' : 'bg-[#F2F3F5]'}`}>{o}</button>
             ))}
           </div>
         )
@@ -116,7 +116,7 @@ function FieldInput({ field: f, value, onChange, onFile }: { field: FormField; v
             const on = (value ?? []).includes(o)
             return (
               <button type="button" key={o} aria-pressed={on} onClick={() => onChange(on ? value.filter((x: string) => x !== o) : [...(value ?? []), o])}
-                className={`rounded-full px-3.5 py-2 text-[13px] ${on ? 'bg-blue text-white' : 'bg-[#F2F3F5]'}`}>
+                className={`rounded-full px-3.5 py-2 text-[14px] ${on ? 'bg-blue text-white' : 'bg-[#F2F3F5]'}`}>
                 {on && '✓ '}{o}
               </button>
             )

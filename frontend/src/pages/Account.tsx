@@ -90,7 +90,7 @@ function Profile() {
 
         <div className="card flex flex-col gap-3.5 p-6">
           <b className="text-[17px]">Mes centres d'intérêt</b>
-          <div className="flex flex-wrap gap-2 text-[13px]">
+          <div className="flex flex-wrap gap-2 text-[14px]">
             {PREFS.map((p) => {
               const on = f.preferences.includes(p.value)
               return <button key={p.value} type="button" aria-pressed={on} onClick={() => togglePref(p.value)} className={`rounded-full px-3.5 py-2 ${on ? 'bg-blue text-white' : 'bg-[#F2F3F5]'}`}>{on && '✓ '}{p.label}</button>
@@ -110,7 +110,7 @@ function Profile() {
               <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-white text-xs font-bold text-blue-dark">{os(d.label)}</span>
               <div className="min-w-0 flex-1"><b className="block text-sm">{d.label}</b><span className="text-xs opacity-70">{d.current ? 'Cet appareil' : `Vu le ${dateTime(d.last_seen_at)}`}</span></div>
               {d.current ? <span className="h-2 w-2 rounded-full bg-[#4ADE80]" aria-label="Actif" />
-                : <button className="text-[13px] font-semibold text-[#FF8A5B]" onClick={async () => { await del(`/api/auth/devices/${d.id}/`); devices.reload() }}>Déconnecter</button>}
+                : <button className="text-[14px] font-semibold text-[#FF8A5B]" onClick={async () => { await del(`/api/auth/devices/${d.id}/`); devices.reload() }}>Déconnecter</button>}
             </div>
           ))}
           <p className="text-xs opacity-75">Un 3ᵉ appareil ferme automatiquement la session la plus ancienne.</p>
@@ -188,7 +188,7 @@ function Orders() {
         })}
       </ul>
       <aside className="card h-max p-7 text-sm xl:sticky xl:top-32">
-        <div className="flex items-center justify-between"><img src="/mark-color.svg" alt="" className="h-11 w-11" /><span className="text-[11px] font-semibold tracking-[.2em] text-faint">{o.status === 'paid' ? 'REÇU' : 'COMMANDE'}</span></div>
+        <div className="flex items-center justify-between"><b className="text-sm">Adjougbe</b><span className="text-[12px] font-semibold tracking-[.2em] text-faint">{o.status === 'paid' ? 'REÇU' : 'COMMANDE'}</span></div>
         <div className="mt-5 text-[30px] font-bold">{fcfa(o.total)}</div>
         <div className="text-muted">{o.status === 'paid' ? `Payé le ${dateTime(o.paid_at)} · ${o.payment_method_label}` : o.status_label}</div>
         <div className="my-5 border-t-2 border-dashed border-[#EFF0F2]" />
@@ -201,7 +201,7 @@ function Orders() {
         </dl>
         <div className="my-5 border-t-2 border-dashed border-[#EFF0F2]" />
         {o.status === 'paid' || o.status === 'refunded' ? (
-          <div className="flex gap-2.5">
+          <div className="flex flex-wrap gap-2.5 [&>*]:min-w-[150px]">
             <button className="btn btn-blue btn-sm flex-1" onClick={() => download(`/api/shop/orders/${o.reference}/receipt/`, `recu-${o.reference}.pdf`)}>Télécharger le reçu</button>
             {readable ? <Link to={`/lire/${readable.work_slug}`} className="btn btn-ghost btn-sm flex-1">Lire l'œuvre</Link>
               : <Link to="/bibliotheque" className="btn btn-ghost btn-sm flex-1">Ma bibliothèque</Link>}
@@ -241,7 +241,7 @@ function MyTrainings() {
     <>
       <div className="mb-5 flex gap-2">
         {([['next', `À venir · ${next.length}`], ['past', `Passées · ${past.length}`]] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} aria-pressed={tab === k} className={`rounded-full px-4 py-2 text-[13px] ${tab === k ? 'bg-ink font-semibold text-white' : 'bg-[var(--card)]'}`}>{l}</button>
+          <button key={k} onClick={() => setTab(k)} aria-pressed={tab === k} className={`rounded-full px-4 py-2 text-[14px] ${tab === k ? 'bg-ink font-semibold text-white' : 'bg-[var(--card)]'}`}>{l}</button>
         ))}
       </div>
       {!list.length && <p className="card p-6 text-muted">{tab === 'next' ? 'Aucune formation à venir.' : 'Aucune formation passée.'}</p>}

@@ -4,7 +4,7 @@ import { DynamicForm } from '../components/DynamicForm'
 import { PageHero } from '../components/PageHero'
 import { Icon, Spinner, WorkCover } from '../components/ui'
 import { post } from '../lib/api'
-import { dateFr } from '../lib/format'
+import { dateFr, formatPhone } from '../lib/format'
 import { useApi, useSettings, useTitle } from '../lib/hooks'
 
 const LEGAL: Record<string, [string, string]> = {
@@ -36,11 +36,11 @@ export function CmsPage({ pageKey, title }: { pageKey: string; title: string }) 
           {LEGAL_LINKS.map(([k, l]) => (
             <Link key={k} to={`/${k}`} className={`rounded-[10px] px-4 py-3 ${k === pageKey ? 'bg-blue font-semibold text-white' : 'hover:bg-paper'}`}>{l}</Link>
           ))}
-          <p className="mt-5 rounded-[14px] bg-paper p-4 text-[13px] leading-relaxed text-ink-soft">Exercez vos droits d'accès et de suppression depuis <Link to="/compte" className="font-semibold text-blue">Mon espace → Profil</Link>.</p>
+          <p className="mt-5 rounded-[14px] bg-paper p-4 text-[14px] leading-relaxed text-ink-soft">Exercez vos droits d'accès et de suppression depuis <Link to="/compte" className="font-semibold text-blue">Mon espace → Profil</Link>.</p>
         </aside>
         <div className="max-w-[760px]">
           {heads.length > 1 && (
-            <nav className="mb-7 flex flex-wrap gap-2.5 text-[13px]" aria-label="Sections">
+            <nav className="mb-7 flex flex-wrap gap-2.5 text-[14px]" aria-label="Sections">
               {heads.map((h, i) => <a key={i} href={`#s-${i + 1}`} className={`rounded-lg px-3 py-1.5 ${i === 0 ? 'bg-blue-tint text-blue' : 'bg-paper'}`}>{h}</a>)}
             </nav>
           )}
@@ -66,23 +66,30 @@ function About({ html, loading }: { html?: string; loading: boolean }) {
     <>
       <PageHero crumbs={[['Accueil', '/'], ['À propos']]} eyebrow="POSSUMUS · NOUS POUVONS" title="Écrire et former pour" accent="faire grandir les autres."
         text="Auteur et formateur basé à Abidjan, Adjougbe accompagne celles et ceux qui veulent diriger leur vie." />
-      <section className="container-x grid items-center gap-12 pb-20 lg:grid-cols-[1fr_1.1fr]">
-        <div className="relative mx-auto aspect-square w-full max-w-[460px]">
-          <div className="absolute inset-0 rounded-full shadow-[0_40px_80px_-30px_rgba(21,96,220,.7)]" style={{ background: 'radial-gradient(circle at 35% 30%,#3FA2FF,#1560DC 55%,#0A3A9E)' }} />
-          <img src="/auteur-hero.webp" alt="Adjougbe" className="absolute bottom-0 left-1/2 h-[104%] w-auto max-w-none -translate-x-1/2 rounded-b-full" onError={(e) => { (e.target as HTMLImageElement).src = '/mark-mono.svg'; (e.target as HTMLImageElement).className = 'absolute inset-[22%] h-[56%] w-[56%] opacity-90' }} />
-        </div>
-        <div>
-          <div className="kicker">Son histoire</div>
-          {loading ? <Spinner /> : <div className="prose-adj mt-3" dangerouslySetInnerHTML={{ __html: (html ?? '').replace(/^<h2>[^<]*<\/h2>/, '') }} />}
-          {st && (
-            <dl className="mt-8 grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-4">
-              {([[st.series, 'séries publiées', 1], [st.readers, 'lecteurs', 50], [st.trainings, 'formations animées', 1]] as [number, string, number][]).filter(([n, , min]) => n >= min).map(([n, l]) => (
-                <div key={l as string} className="rounded-2xl bg-paper p-4 text-center">
-                  <dd className="text-[26px] font-bold text-blue">{Number(n).toLocaleString('fr-FR')}</dd><dt className="text-xs text-muted">{l}</dt>
-                </div>
-              ))}
-            </dl>
-          )}
+      <section className="container-x grid max-w-[1120px] items-start gap-10 pb-20 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-16">
+        <aside className="lg:sticky lg:top-28">
+          <figure className="card overflow-hidden">
+            <div className="hero-grad relative aspect-[4/5] overflow-hidden">
+              <span className="pointer-events-none absolute inset-0 opacity-[.06]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '72px 72px' }} />
+              <img src="/auteur-hero.webp" alt="Adjougbe" className="absolute bottom-0 left-1/2 h-[94%] w-auto max-w-none -translate-x-1/2 object-contain" />
+            </div>
+            <figcaption className="p-5">
+              <b className="block text-[19px]">Adjougbe</b>
+              <span className="text-[14.5px] text-muted">Auteur et formateur · Abidjan</span>
+              {st && (
+                <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-4 text-center">
+                  {([[st.series, 'séries'], [st.readers, 'lecteurs'], [st.trainings, 'formations']] as [number, string][]).map(([n, l]) => (
+                    <div key={l}><dd className="text-[20px] font-bold text-blue">{Number(n).toLocaleString('fr-FR')}</dd><dt className="text-[13px] text-muted">{l}</dt></div>
+                  ))}
+                </dl>
+              )}
+            </figcaption>
+          </figure>
+        </aside>
+        <div className="max-w-[680px]">
+          <h2 className="text-[28px] md:text-[32px]">Son histoire</h2>
+          {loading ? <Spinner /> : <div className="prose-adj about-prose mt-5" dangerouslySetInnerHTML={{ __html: (html ?? '').replace(/^<h2>[^<]*<\/h2>/, '') }} />}
+          <Link to="/contact" className="btn btn-blue mt-8">Inviter Adjougbe</Link>
         </div>
       </section>
       <section className="bg-paper py-20">
@@ -119,30 +126,40 @@ export function Contact() {
       <PageHero crumbs={[['Accueil', '/'], ['Contact']]} eyebrow="PARLONS" title="Une question, une conférence," accent="un projet ?"
         text="Dédicaces, presse, formations en entreprise : réponse sous 48 h, du lundi au vendredi." base="var(--color-paper)" />
       <div className="bg-paper pb-24">
-        <div className="container-x grid gap-8 lg:grid-cols-[360px_1fr]">
-          <div className="grid content-start gap-4">
-            {s?.contact_email && <ContactCard icon="envelope" label="E-mail" value={s.contact_email} href={`mailto:${s.contact_email}`} />}
-            {s?.whatsapp_number && <ContactCard icon="phone-call" label="WhatsApp" value={`+${s.whatsapp_number}`} href={`https://wa.me/${s.whatsapp_number}`} />}
-            <ContactCard icon="marker" label="Adresse" value="Abidjan, Côte d'Ivoire" />
-          </div>
-          <div className="card p-6 md:p-8">
-            <h2 className="mb-6 text-2xl">Envoyer un message</h2>
+        <div className="container-x grid max-w-[1120px] items-start gap-8 lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-10">
+          <aside className="card-navy grid gap-6 p-7 md:p-8">
+            <span className="pointer-events-none absolute inset-0 opacity-[.05]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '80px 80px' }} />
+            <div className="relative">
+              <h2 className="text-[24px] text-white">Le plus rapide : WhatsApp</h2>
+              <p className="mt-2 text-white/80">Une question sur une commande, un accès ou une formation ? Écrivez-nous, nous répondons dans la journée.</p>
+            </div>
+            {s?.whatsapp_number && (
+              <a href={`https://wa.me/${s.whatsapp_number}`} target="_blank" rel="noopener noreferrer" className="btn relative !justify-start gap-3 !py-3.5 text-white" style={{ background: '#25D366' }}>
+                <i className="fi fi-brands-whatsapp text-xl" aria-hidden="true" />
+                <span className="text-left leading-tight"><b className="block">Discuter sur WhatsApp</b><span className="text-[13px] font-normal opacity-90">{formatPhone(s.whatsapp_number)}</span></span>
+              </a>
+            )}
+            <ul className="relative grid gap-4 border-t border-white/15 pt-6 text-[15px]">
+              {s?.contact_email && <li className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/12"><Icon name="envelope" /></span><a href={`mailto:${s.contact_email}`} className="break-all hover:underline">{s.contact_email}</a></li>}
+              <li className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/12"><Icon name="marker" /></span>Abidjan, Côte d'Ivoire</li>
+              <li className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/12"><Icon name="clock" /></span>Réponse sous 48 h, du lundi au vendredi</li>
+            </ul>
+            <div className="relative border-t border-white/15 pt-6">
+              <b className="block text-[15px]">On nous écrit souvent pour</b>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {['Une dédicace', 'Une interview', 'Une conférence', 'Une formation en entreprise'].map((x) => <span key={x} className="rounded-full bg-white/12 px-3 py-1.5 text-[14px]">{x}</span>)}
+              </div>
+            </div>
+          </aside>
+          <div className="card p-6 md:p-10">
+            <h2 className="text-[26px]">Envoyer un message</h2>
+            <p className="mt-1.5 mb-7 text-muted">Tous les champs marqués d'un astérisque sont obligatoires.</p>
             {loading ? <Spinner /> : data && <DynamicForm form={data} />}
           </div>
         </div>
       </div>
     </>
   )
-}
-
-function ContactCard({ icon, label, value, href }: { icon: string; label: string; value: string; href?: string }) {
-  const body = (
-    <>
-      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-blue-tint text-lg text-blue"><Icon name={icon} /></span>
-      <span><span className="block text-xs text-muted">{label}</span><b className="break-all">{value}</b></span>
-    </>
-  )
-  return href ? <a href={href} className="card flex items-center gap-4 p-5 hover:ring-2 hover:ring-blue-tint">{body}</a> : <div className="card flex items-center gap-4 p-5">{body}</div>
 }
 
 export function CertificateCheck() {
@@ -269,7 +286,7 @@ export function Search() {
                 <li key={t.slug}>
                   <Link to={`/formations/${t.slug}`} className="card flex items-center gap-5 p-5 hover:ring-2 hover:ring-blue-tint">
                     <span className="flex h-20 w-[120px] shrink-0 flex-col items-center justify-center rounded-[10px] text-white" style={{ background: 'linear-gradient(135deg,#1560DC,#041C5C)' }}>
-                      {t.next ? <><b className="text-[26px] leading-none">{new Date(t.next.starts_at).getDate()}</b><span className="text-[11px] font-semibold text-[#FF8A5B] uppercase">{new Date(t.next.starts_at).toLocaleDateString('fr-FR', { month: 'short' })}</span></> : <Icon name="graduation-cap" className="text-2xl" />}
+                      {t.next ? <><b className="text-[26px] leading-none">{new Date(t.next.starts_at).getDate()}</b><span className="text-[12px] font-semibold text-[#FF8A5B] uppercase">{new Date(t.next.starts_at).toLocaleDateString('fr-FR', { month: 'short' })}</span></> : <Icon name="graduation-cap" className="text-2xl" />}
                     </span>
                     <div className="min-w-0 flex-1"><span className="text-xs font-semibold text-ok uppercase">Formation · {t.next ? `${t.next.seats_left} places` : t.format}</span><b className="mt-1 block text-lg">{mark(t.title, q)}</b></div>
                     <span className="text-sm font-semibold text-blue">Voir →</span>

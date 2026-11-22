@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { ErrorNote, Field, Icon, Logo, WorkCover } from '../components/ui'
+import { ErrorNote, Field, Icon, WorkCover } from '../components/ui'
 import { ApiError, post } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useApi, useTitle } from '../lib/hooks'
@@ -11,6 +11,8 @@ function GradientBg({ className = '', children }: { className?: string; children
     <div className={`relative overflow-hidden ${className}`}
       style={{ background: 'radial-gradient(600px 460px at 55% 40%,#3FA2FF 0%,rgba(31,120,240,.55) 38%,transparent 72%),linear-gradient(125deg,#041C5C 0%,#0A3A9E 38%,#1560DC 70%,#2A86F2 100%)' }}>
       <div className="pointer-events-none absolute inset-0 opacity-[.045]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '92px 92px' }} />
+      {/* Fondu vers le pied de page sombre : aucune rupture de couleur en bas de page. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40" style={{ background: 'linear-gradient(180deg,transparent,#0E0F13)' }} />
       {children}
     </div>
   )
@@ -21,7 +23,6 @@ function Shell({ title, sub, children }: { title: string; sub?: string; children
   return (
     <GradientBg className="grid min-h-[calc(100vh-120px)] place-items-center px-4 py-14">
       <div className="relative flex w-full max-w-[440px] flex-col gap-4 rounded-[20px] bg-[var(--card)] p-8 shadow-[0_50px_90px_-30px_rgba(4,28,92,.8)] sm:p-10">
-        <img src="/mark-color.svg" alt="" className="h-[52px] w-[52px] self-center" />
         <div className="text-center"><h1 className="text-[26px]">{title}</h1>{sub && <p className="mt-1 text-sm text-muted">{sub}</p>}</div>
         {children}
       </div>
@@ -41,9 +42,10 @@ function strength(pw: string) {
 function PasswordInput({ value, onChange, autoComplete }: { value: string; onChange: (v: string) => void; autoComplete: string }) {
   const [show, setShow] = useState(false)
   return (
-    <div className="relative">
+    <div className="input-icon">
+      <Icon name="lock" />
       <input className="input pr-20" type={show ? 'text' : 'password'} autoComplete={autoComplete} required value={value} onChange={(e) => onChange(e.target.value)} />
-      <button type="button" onClick={() => setShow(!show)} className="absolute top-1/2 right-3 -translate-y-1/2 text-[13px] text-faint hover:text-ink">{show ? 'Masquer' : 'Afficher'}</button>
+      <button type="button" onClick={() => setShow(!show)} className="absolute top-1/2 right-3 -translate-y-1/2 text-[14px] text-faint hover:text-ink">{show ? 'Masquer' : 'Afficher'}</button>
     </div>
   )
 }
@@ -77,8 +79,8 @@ export function Login() {
   return (
     <Shell title="Bon retour" sub="Connectez-vous pour reprendre votre lecture">
       <form onSubmit={submit} className="grid gap-4">
-        {params.get('nouveau') && !error && <p className="rounded-[10px] bg-[#DCFCE7] px-3.5 py-3 text-[13px] text-ok-dark" role="status">Mot de passe modifié. Connectez-vous avec le nouveau.</p>}
-        {error ? <p className="rounded-[10px] bg-[#FFEDE4] px-3.5 py-3 text-[13px] text-danger" role="alert">{(error as Error).message}</p> : null}
+        {params.get('nouveau') && !error && <p className="rounded-[10px] bg-[#DCFCE7] px-3.5 py-3 text-[14px] text-ok-dark" role="status">Mot de passe modifié. Connectez-vous avec le nouveau.</p>}
+        {error ? <p className="rounded-[10px] bg-[#FFEDE4] px-3.5 py-3 text-[14px] text-danger" role="alert">{(error as Error).message}</p> : null}
         <Field label="E-mail"><input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         <label className="field">
           <span className="flex justify-between">Mot de passe<Link to="/mot-de-passe" className="font-medium text-blue">Oublié ?</Link></span>
@@ -141,7 +143,6 @@ export function Register() {
   return (
     <div className="grid min-h-[calc(100vh-120px)] lg:grid-cols-2">
       <GradientBg className="hidden flex-col p-12 text-white lg:flex">
-        <Logo light />
         <div className="relative my-auto flex justify-center">
           {(works.data ?? []).slice(0, 3).map((w: any, i: number) => (
             <div key={w.id} className={i === 1 ? 'relative z-[1] w-[170px] -translate-y-3.5' : 'w-[150px]'}
@@ -152,50 +153,58 @@ export function Register() {
         </div>
         <div className="relative">
           <p className="text-[32px] leading-tight font-bold">Votre bibliothèque<br /><span className="text-orange">vous attend.</span></p>
-          <div className="mt-5 flex gap-6 text-[13px] opacity-90"><span>✓ Reprise de lecture</span><span>✓ Reçus en ligne</span><span>✓ 2 appareils</span></div>
+          <div className="mt-5 flex gap-6 text-[14px] opacity-90"><span>✓ Reprise de lecture</span><span>✓ Reçus en ligne</span><span>✓ 2 appareils</span></div>
         </div>
       </GradientBg>
-      <div className="flex flex-col gap-4 px-6 py-12 sm:px-12 lg:px-[72px]">
-        <div className="flex justify-between text-[13px]"><span className="text-faint">Inscription gratuite</span><span>Déjà inscrit ? <Link to="/connexion" className="font-semibold text-blue">Se connecter</Link></span></div>
-        <h1 className="mt-2 text-[34px]">Créer un compte</h1>
-        <form onSubmit={submit} className="grid gap-4" noValidate>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Nom complet" error={fe('full_name')}><input className="input" autoComplete="name" value={f.full_name} onChange={(e) => set('full_name', e.target.value)} /></Field>
-            <Field label="Ville"><input className="input" autoComplete="address-level2" value={f.city} onChange={(e) => set('city', e.target.value)} placeholder="Abidjan" /></Field>
+      <div className="grid place-items-center bg-paper px-4 py-10 sm:px-8 lg:py-14">
+        <div className="w-full max-w-[540px] rounded-[24px] bg-[var(--card)] p-6 shadow-[0_30px_70px_-35px_rgba(4,28,92,.35)] sm:p-10">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[14px]">
+            <span className="chip chip-orange">Inscription gratuite</span>
+            <span className="text-muted">Déjà inscrit ? <Link to="/connexion" className="font-semibold text-blue">Se connecter</Link></span>
           </div>
-          <Field label="E-mail" error={fe('email')}><input className="input" type="email" autoComplete="email" value={f.email} onChange={(e) => set('email', e.target.value)} /></Field>
-          <label className="field">
-            <span className="flex justify-between">Téléphone <span className="font-normal text-faint">facultatif</span></span>
-            <div className="flex gap-2">
-              <select className="input !w-32" aria-label="Pays" value={f.country} onChange={(e) => set('country', e.target.value)}>
-                {[["Côte d'Ivoire", '+225'], ['France', '+33'], ['Sénégal', '+221'], ['Burkina Faso', '+226'], ['Mali', '+223'], ['Bénin', '+229'], ['Togo', '+228'], ['Cameroun', '+237'], ['Canada', '+1'], ['Autre', '…']].map(([c, d]) => (
-                  <option key={c} value={c}>{d} {c === 'Autre' ? 'Autre pays' : ''}</option>
-                ))}
-              </select>
-              <input className="input flex-1" type="tel" autoComplete="tel" placeholder="07 00 00 00 00" value={f.phone} onChange={(e) => set('phone', e.target.value)} />
+          <h1 className="mt-5 text-[30px] sm:text-[34px]">Créer un compte</h1>
+          <p className="mt-1.5 text-muted">Lisez vos œuvres partout, retrouvez vos reçus et vos formations.</p>
+          <form onSubmit={submit} className="mt-7 grid gap-5" noValidate>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Nom complet" error={fe('full_name')}><span className="input-icon"><Icon name="user" /><input className="input" autoComplete="name" value={f.full_name} onChange={(e) => set('full_name', e.target.value)} placeholder="Awa Koné" /></span></Field>
+              <Field label="Ville"><span className="input-icon"><Icon name="marker" /><input className="input" autoComplete="address-level2" value={f.city} onChange={(e) => set('city', e.target.value)} placeholder="Abidjan" /></span></Field>
             </div>
-            {fe('phone') && <span className="err">{fe('phone')}</span>}
-          </label>
-          <label className="field">
-            <span>Mot de passe</span>
-            <PasswordInput value={f.password} onChange={(v) => set('password', v)} autoComplete="new-password" />
-            <span className="mt-1 flex gap-1" aria-label={`Robustesse : ${level} sur 4`}>
-              {[0, 1, 2, 3].map((i) => <span key={i} className={`h-1 flex-1 rounded-full ${i < level ? (level >= 3 ? 'bg-ok' : 'bg-orange') : 'bg-[#EFF0F2]'}`} />)}
-            </span>
-            {(fe('password') || (Array.isArray(err?.data.non_field_errors) && String(err!.data.non_field_errors[0]))) ? <span className="err">{fe('password') || String((err!.data.non_field_errors as string[])[0])}</span> : <small>8 caractères minimum, évitez les mots trop simples.</small>}
-          </label>
-          <label className="flex items-start gap-3 text-[13px] leading-relaxed">
-            <input type="checkbox" className="mt-0.5 h-[18px] w-[18px] accent-blue" checked={f.accept_terms} onChange={(e) => set('accept_terms', e.target.checked)} />
-            <span>J'accepte les <Link to="/cgu" className="font-semibold text-blue" target="_blank">CGU</Link> et la <Link to="/confidentialite" className="font-semibold text-blue" target="_blank">politique de confidentialité</Link>.</span>
-          </label>
-          {fe('accept_terms') && <span className="err -mt-2">{fe('accept_terms')}</span>}
-          <label className="flex items-start gap-3 text-[13px] leading-relaxed text-muted">
-            <input type="checkbox" className="mt-0.5 h-[18px] w-[18px] accent-blue" checked={f.newsletter_consent} onChange={(e) => set('newsletter_consent', e.target.checked)} />
-            Recevoir la punchline du jour par e-mail (facultatif).
-          </label>
-          {err && !Object.keys(err.data).some((k) => ['full_name', 'email', 'password', 'phone', 'accept_terms', 'non_field_errors'].includes(k)) && <ErrorNote error={err} />}
-          <button className="btn btn-primary mt-1 !py-4 shadow-orange" disabled={busy}>{busy ? 'Création…' : 'Créer mon compte'}</button>
-        </form>
+            <Field label="E-mail" error={fe('email')}><span className="input-icon"><Icon name="envelope" /><input className="input" type="email" autoComplete="email" value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="vous@exemple.com" /></span></Field>
+            <label className="field">
+              <span className="flex justify-between">Téléphone <span className="text-[13px] font-normal text-faint">facultatif</span></span>
+              <div className="flex gap-2">
+                <select className="input !w-[110px] shrink-0" aria-label="Pays" value={f.country} onChange={(e) => set('country', e.target.value)}>
+                  {[["Côte d'Ivoire", '+225'], ['France', '+33'], ['Sénégal', '+221'], ['Burkina Faso', '+226'], ['Mali', '+223'], ['Bénin', '+229'], ['Togo', '+228'], ['Cameroun', '+237'], ['Canada', '+1'], ['Autre', '…']].map(([c, d]) => (
+                    <option key={c} value={c}>{d} {c === 'Autre' ? 'Autre pays' : ''}</option>
+                  ))}
+                </select>
+                <span className="input-icon min-w-0 flex-1"><Icon name="phone-call" /><input className="input" type="tel" autoComplete="tel" placeholder="07 00 00 00 00" value={f.phone} onChange={(e) => set('phone', e.target.value)} /></span>
+              </div>
+              {fe('phone') && <span className="err">{fe('phone')}</span>}
+            </label>
+            <label className="field">
+              <span>Mot de passe</span>
+              <PasswordInput value={f.password} onChange={(v) => set('password', v)} autoComplete="new-password" />
+              <span className="mt-1 flex gap-1.5" aria-label={`Robustesse : ${level} sur 4`}>
+                {[0, 1, 2, 3].map((i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i < level ? (level >= 3 ? 'bg-ok' : 'bg-orange') : 'bg-[#EFF0F2]'}`} />)}
+              </span>
+              {(fe('password') || (Array.isArray(err?.data.non_field_errors) && String(err!.data.non_field_errors[0]))) ? <span className="err">{fe('password') || String((err!.data.non_field_errors as string[])[0])}</span> : <small>8 caractères minimum, évitez les mots trop simples.</small>}
+            </label>
+            <div className="grid gap-3 rounded-2xl bg-paper p-4">
+              <label className="flex cursor-pointer items-start gap-3 text-[14.5px] leading-relaxed">
+                <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-orange" checked={f.accept_terms} onChange={(e) => set('accept_terms', e.target.checked)} />
+                <span>J'accepte les <Link to="/cgu" className="font-semibold text-blue" target="_blank">CGU</Link> et la <Link to="/confidentialite" className="font-semibold text-blue" target="_blank">politique de confidentialité</Link>.</span>
+              </label>
+              {fe('accept_terms') && <span className="err">{fe('accept_terms')}</span>}
+              <label className="flex cursor-pointer items-start gap-3 text-[14.5px] leading-relaxed text-ink-soft">
+                <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-orange" checked={f.newsletter_consent} onChange={(e) => set('newsletter_consent', e.target.checked)} />
+                Recevoir la punchline du jour par e-mail.
+              </label>
+            </div>
+            {err && !Object.keys(err.data).some((k) => ['full_name', 'email', 'password', 'phone', 'accept_terms', 'non_field_errors'].includes(k)) && <ErrorNote error={err} />}
+            <button className="btn btn-primary !py-4 text-[16px] shadow-orange" disabled={busy}>{busy ? 'Création…' : 'Créer mon compte'}</button>
+          </form>
+        </div>
       </div>
     </div>
   )
@@ -215,7 +224,7 @@ export function VerifySent() {
       <div className="relative w-full max-w-[460px] rounded-[20px] bg-[var(--card)] px-8 py-11 text-center shadow-[0_50px_90px_-30px_rgba(4,28,92,.8)] sm:px-10">
         <div className="relative mx-auto grid h-24 w-24 place-items-center rounded-[26px] text-[42px] text-white shadow-[0_18px_36px_-12px_rgba(21,96,220,.8)]" style={{ background: 'linear-gradient(135deg,#3386C9,#1560DC)' }}>
           <Icon name="envelope" />
-          <span className="absolute -top-2 -right-2 grid h-[30px] w-[30px] place-items-center rounded-full border-[3px] border-white bg-orange text-[13px] font-bold">1</span>
+          <span className="absolute -top-2 -right-2 grid h-[30px] w-[30px] place-items-center rounded-full border-[3px] border-white bg-orange text-[14px] font-bold">1</span>
         </div>
         <h1 className="mt-7 text-[28px]">Vérifiez votre boîte mail</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-muted">Un lien de confirmation a été envoyé à <b className="text-ink">{email || 'votre adresse'}</b>. Il est valable 3 jours.</p>
@@ -225,7 +234,7 @@ export function VerifySent() {
           {wait > 0 ? <b className="text-orange">Renvoyer dans 0:{String(wait).padStart(2, '0')}</b>
             : <button className="font-bold text-orange" onClick={async () => { await post('/api/auth/resend-verification/'); setWait(60) }}>Renvoyer le lien</button>}
         </p>
-        <p className="mt-6 rounded-[10px] bg-paper p-3.5 text-left text-[13px] text-muted">Tant que l'e-mail n'est pas vérifié, les achats sont désactivés. Vous pouvez déjà lire les extraits gratuits.</p>
+        <p className="mt-6 rounded-[10px] bg-paper p-3.5 text-left text-[14px] text-muted">Tant que l'e-mail n'est pas vérifié, les achats sont désactivés. Vous pouvez déjà lire les extraits gratuits.</p>
       </div>
     </GradientBg>
   )
@@ -237,12 +246,12 @@ export function ForgotPassword() {
   const [sent, setSent] = useState(false)
   return (
     <Shell title="Mot de passe oublié" sub="Saisissez votre e-mail, nous vous envoyons un lien valable 1 heure.">
-      <Link to="/connexion" className="-mt-2 text-center text-[13px] text-muted">← Retour à la connexion</Link>
+      <Link to="/connexion" className="-mt-2 text-center text-[14px] text-muted">← Retour à la connexion</Link>
       <div className="kicker text-center">Étape 1</div>
       <form onSubmit={async (e) => { e.preventDefault(); await post('/api/auth/password-reset/', { email }); setSent(true) }} className="grid gap-4">
         <Field label="E-mail"><input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         <button className="btn btn-primary !py-3.5">Envoyer le lien</button>
-        {sent && <p className="rounded-[10px] bg-[#DCFCE7] px-3.5 py-3 text-[13px] text-ok-dark" role="status">✓ Si un compte existe, un e-mail vient d'être envoyé.</p>}
+        {sent && <p className="rounded-[10px] bg-[#DCFCE7] px-3.5 py-3 text-[14px] text-ok-dark" role="status">✓ Si un compte existe, un e-mail vient d'être envoyé.</p>}
       </form>
     </Shell>
   )

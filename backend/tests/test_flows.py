@@ -393,3 +393,19 @@ class VercelModeTests(Base):
         r = self.client.get("/livres/les-punchlines-tome-1", HTTP_USER_AGENT="WhatsApp/2.23")
         self.assertContains(r, 'property="og:title" content="Les Punchlines — Tome 1 — Adjougbe"')
         self.assertEqual(self.client.get("/api/health/", HTTP_USER_AGENT="WhatsApp/2.23").status_code, 200)
+
+
+class ArticleBannerTests(TestCase):
+    def test_banner_validation(self):
+        from apps.blog.serializers import AdminPostSerializer
+        ok = AdminPostSerializer(data={"title": "A", "kind": "article", "banners": [
+            {"position": "milieu", "title": "Tome 2", "cta": "Voir", "link": "/livres/t2", "extra": "x"}]})
+        self.assertTrue(ok.is_valid(), ok.errors)
+        self.assertEqual(ok.validated_data["banners"][0]["position"], "milieu")
+        self.assertNotIn("extra", ok.validated_data["banners"][0])
+        for bad in ({"title": "x", "link": "javascript:alert(1)"}, {"title": "x", "link": "//evil.com"},
+                    {"image": "data:image/png;base64,AA"}, {"text": "sans titre ni image"}):
+            s = AdminPostSerializer(data={"title": "A", "kind": "article", "banners": [bad]})
+            self.assertFalse(s.is_valid(), bad)
+        s = AdminPostSerializer(data={"title": "A", "kind": "article", "banners": [{"title": "x"}] * 5})
+        self.assertFalse(s.is_valid())

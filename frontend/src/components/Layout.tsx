@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
+import { formatPhone } from '../lib/format'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { post } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -45,11 +46,11 @@ function Header() {
   useEffect(() => { setOpen(false) }, [loc.pathname])
 
   const { data: site } = useSettings<{ whatsapp_number: string }>()
-  const phone = site?.whatsapp_number ? `+${site.whatsapp_number.replace(/^(\d{3})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/, '$1 $2 $3 $4 $5 $6')}` : ''
+  const phone = site?.whatsapp_number ? formatPhone(site.whatsapp_number) : ''
   return (
     <header className="sticky top-0 z-40 no-print">
       {/* Bandeau de réassurance (maquette « Adj Header ») */}
-      <div className="hidden bg-ink text-[12.5px] text-[#D9DBE0] md:block">
+      <div className="hidden bg-ink text-[13.5px] text-[#D9DBE0] md:block">
         <div className="container-x flex items-center gap-8 py-2.5">
           {[['mobile-notch', 'Paiement Mobile Money'], ['lock', 'Lecture sécurisée'], ['clock', 'Accès immédiat']].map(([i, l]) => (
             <span key={l} className="flex items-center gap-2"><Icon name={i} className="text-orange" />{l}</span>
@@ -116,14 +117,13 @@ function Header() {
 
 function NewsletterForm() {
   const [email, setEmail] = useState('')
-  const [consent, setConsent] = useState(false)
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setErr('')
     try {
-      const r = await post('/api/newsletter/subscribe/', { email, consent, source: 'pied-de-page' })
+      const r = await post('/api/newsletter/subscribe/', { email, consent: true, source: 'pied-de-page' })
       setMsg(r.message)
     } catch (ex) {
       setErr((ex as Error).message)
@@ -138,57 +138,57 @@ function NewsletterForm() {
           placeholder="Votre adresse e-mail" className="min-w-0 flex-1 bg-white px-4 py-4 text-sm text-ink outline-none" />
         <button className="bg-orange px-6 text-sm font-semibold text-white hover:bg-orange-dark">S'inscrire</button>
       </div>
-      <label className="flex items-start gap-2 text-xs text-white/70">
-        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 accent-orange" required />
-        J'accepte de recevoir les e-mails d'Adjougbe. Désinscription en un clic.
-      </label>
       {err && <span className="text-sm text-orange">{err}</span>}
     </form>
   )
 }
 
+// Pages déjà entièrement sur fond bleu : pas de bandeau newsletter (pas de « cassure » de couleur).
+const FULL_BLUE = /^\/(connexion|inscription|mot-de-passe|verifier-email|verification-envoyee)/
+
 function Footer() {
+  const { pathname } = useLocation()
   const { data } = useSettings<{ contact_email: string; whatsapp_number: string }>()
   return (
     <footer className="no-print">
-      <div className="relative overflow-hidden text-white" style={{ background: 'radial-gradient(500px 300px at 85% 30%,#3FA2FF,transparent 70%),linear-gradient(125deg,#041C5C,#0A3A9E 45%,#1560DC)' }}>
-        <img src="/mark-mono.svg" alt="" className="pointer-events-none absolute -top-16 -right-10 h-80 w-80 opacity-[.07]" />
+      {!FULL_BLUE.test(pathname) && <div className="relative overflow-hidden text-white" style={{ background: 'radial-gradient(500px 300px at 85% 30%,#3FA2FF,transparent 70%),linear-gradient(125deg,#041C5C,#0A3A9E 45%,#1560DC)' }}>
+        <div className="pointer-events-none absolute inset-0 opacity-[.045]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '92px 92px' }} />
         <div className="container-x relative flex flex-col gap-6 py-12 md:flex-row md:items-center md:gap-12 md:py-14">
           <div className="flex-1">
-            <div className="text-[11px] font-semibold tracking-[.14em] opacity-75">RESTONS EN CONTACT</div>
+            <div className="text-[12px] font-semibold tracking-[.14em] opacity-75">RESTONS EN CONTACT</div>
             <p className="mt-2.5 text-2xl font-bold md:text-[30px]">Recevez la punchline du jour</p>
           </div>
           <div className="w-full md:w-[460px]"><NewsletterForm /></div>
         </div>
-      </div>
+      </div>}
       <div className="bg-ink text-[#D9DBE0]">
         <div className="container-x grid gap-10 pt-14 pb-7 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div>
             <Logo light />
-            <p className="mt-4 max-w-xs text-[13.5px] leading-7 text-faint">Livres, formations et contenus pour développer le leadership. Abidjan, Côte d'Ivoire.</p>
+            <p className="mt-4 max-w-xs text-[14.5px] leading-7 text-faint">Livres, formations et contenus pour développer le leadership. Abidjan, Côte d'Ivoire.</p>
           </div>
-          <nav className="flex flex-col gap-2.5 text-[13.5px]" aria-label="Explorer">
+          <nav className="flex flex-col gap-2.5 text-[14.5px]" aria-label="Explorer">
             <b className="mb-1 text-white">Explorer</b>
             <Link to="/boutique" className="hover:text-white">Œuvres</Link>
             <Link to="/formations" className="hover:text-white">Formations</Link>
             <Link to="/blog" className="hover:text-white">Blog</Link>
             <Link to="/a-propos" className="hover:text-white">À propos</Link>
           </nav>
-          <nav className="flex flex-col gap-2.5 text-[13.5px]" aria-label="Mon compte">
+          <nav className="flex flex-col gap-2.5 text-[14.5px]" aria-label="Mon compte">
             <b className="mb-1 text-white">Mon compte</b>
             <Link to="/bibliotheque" className="hover:text-white">Bibliothèque</Link>
             <Link to="/compte/commandes" className="hover:text-white">Commandes</Link>
             <Link to="/compte" className="hover:text-white">Profil</Link>
             <Link to="/cadeau" className="hover:text-white">J'ai un code cadeau</Link>
           </nav>
-          <div className="flex flex-col gap-2.5 text-[13.5px]">
+          <div className="flex flex-col gap-2.5 text-[14.5px]">
             <b className="mb-1 text-white">Contact</b>
             {data?.contact_email && <a href={`mailto:${data.contact_email}`} className="hover:text-white">{data.contact_email}</a>}
             {data?.whatsapp_number && <a href={`https://wa.me/${data.whatsapp_number}`} className="hover:text-white">WhatsApp</a>}
             <Link to="/contact" className="hover:text-white">Contact et dédicaces</Link>
           </div>
         </div>
-        <div className="container-x flex flex-wrap gap-x-6 gap-y-2 border-t border-white/10 py-5 text-[12.5px] text-faint">
+        <div className="container-x flex flex-wrap gap-x-6 gap-y-2 border-t border-white/10 py-5 text-[13.5px] text-faint">
           <span>© {new Date().getFullYear()} Adjougbe</span>
           <Link to="/cgu" className="hover:text-white">CGU</Link>
           <Link to="/confidentialite" className="hover:text-white">Confidentialité</Link>
@@ -223,7 +223,7 @@ function MobileTabs() {
     { to: user ? (user.is_staff_role ? '/admin' : '/bibliotheque') : '/connexion', label: 'Moi', icon: 'user' },
   ]
   return (
-    <nav className="fixed inset-x-3 bottom-3 z-40 flex justify-around rounded-[18px] bg-[var(--card)] p-1.5 text-[11px] shadow-[0_10px_30px_-10px_rgba(4,28,92,.4)] md:hidden no-print" aria-label="Navigation mobile">
+    <nav className="fixed inset-x-3 bottom-3 z-40 flex justify-around rounded-[18px] bg-[var(--card)] p-1.5 text-[12px] shadow-[0_10px_30px_-10px_rgba(4,28,92,.4)] md:hidden no-print" aria-label="Navigation mobile">
       {tabs.map((t) => (
         <NavLink key={t.label} to={t.to} end={t.end}
           className={({ isActive }) => `flex flex-col items-center gap-[3px] rounded-xl px-3.5 py-2.5 ${isActive ? 'bg-blue font-semibold text-white' : 'text-muted'}`}>

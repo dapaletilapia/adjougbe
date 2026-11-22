@@ -192,17 +192,17 @@ export default function Reader() {
           <b className="block truncate text-[15px] md:text-base">{current ? `${unit} ${current.number}${current.title ? ` — ${current.title}` : ''}` : ''}</b>
         </div>
         <div className={`hidden items-center gap-1 rounded-[10px] p-1 md:flex ${chip}`}>
-          <button onClick={() => changeSize(-1)} className="h-[34px] w-9 text-[13px] font-semibold" aria-label="Réduire le texte">A−</button>
+          <button onClick={() => changeSize(-1)} className="h-[34px] w-9 text-[14px] font-semibold" aria-label="Réduire le texte">A−</button>
           <span className={`w-10 text-center text-xs ${dark ? 'text-white/60' : 'text-muted'}`}>{SIZE_PCT[size]} %</span>
           <button onClick={() => changeSize(1)} className="h-[34px] w-9 text-base font-semibold" aria-label="Agrandir le texte">A+</button>
         </div>
-        <div className={`hidden gap-1 rounded-[10px] p-1 text-[13px] lg:flex ${chip}`} role="radiogroup" aria-label="Fond">
+        <div className={`hidden gap-1 rounded-[10px] p-1 text-[14px] lg:flex ${chip}`} role="radiogroup" aria-label="Fond">
           {Object.entries(THEME_LABELS).map(([k, l]) => (
             <button key={k} role="radio" aria-checked={theme === k} onClick={() => changeTheme(k)}
               className={`rounded-lg px-3.5 py-2 ${theme === k ? (dark ? 'bg-white/15 font-semibold' : 'bg-white font-semibold shadow-[0_2px_6px_rgba(4,28,92,.1)]') : ''}`}>{l}</button>
           ))}
         </div>
-        <button onClick={() => setPanel(panel === 'display' ? null : 'display')} className={`grid h-[42px] w-[42px] place-items-center rounded-[10px] text-[13px] font-semibold lg:hidden ${chip}`} aria-label="Affichage">Aa</button>
+        <button onClick={() => setPanel(panel === 'display' ? null : 'display')} className={`grid h-[42px] w-[42px] place-items-center rounded-[10px] text-[14px] font-semibold lg:hidden ${chip}`} aria-label="Affichage">Aa</button>
         {manifest && user && <button onClick={addBookmark} className={`hidden h-[42px] w-[42px] place-items-center rounded-[10px] sm:grid ${chip}`} aria-label="Ajouter un signet" title="Ajouter un signet"><Icon name="bookmark" /></button>}
         <button onClick={() => setPanel(panel === 'toc' ? null : 'toc')} aria-expanded={panel === 'toc'}
           className="flex h-[42px] items-center gap-1.5 rounded-[10px] bg-blue px-3 text-sm font-semibold text-white md:px-4">
@@ -238,7 +238,7 @@ export default function Reader() {
           {/* Hors focus : contenu masqué (14c) */}
           {hidden && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-10 text-center text-white" style={{ background: 'linear-gradient(125deg,rgba(4,28,92,.94),rgba(21,96,220,.9))' }}>
-              <img src={markWhite} alt="" className="h-20 w-20" />
+              <span className="grid h-20 w-20 place-items-center rounded-full bg-white/10 text-4xl"><Icon name="eye-crossed" /></span>
               <h2 className="mt-5 text-[28px]">Lecture en pause</h2>
               <p className="mt-2.5 max-w-[380px] leading-relaxed opacity-85">Le texte est masqué quand vous quittez l'onglet. Il réapparaît dès votre retour.</p>
               <button onClick={() => setHidden(false)} className="btn btn-primary mt-6 shadow-orange">Reprendre la lecture</button>
@@ -247,7 +247,7 @@ export default function Reader() {
 
           {/* Copie bloquée (14b) */}
           {blocked && (
-            <div role="status" className="absolute right-4 bottom-4 z-30 flex items-center gap-3 rounded-[14px] bg-white px-4 py-3.5 text-[13px] text-ink shadow-[0_20px_40px_-14px_rgba(0,0,0,.6)] md:right-7 md:bottom-7">
+            <div role="status" className="absolute right-4 bottom-4 z-30 flex items-center gap-3 rounded-[14px] bg-white px-4 py-3.5 text-[14px] text-ink shadow-[0_20px_40px_-14px_rgba(0,0,0,.6)] md:right-7 md:bottom-7">
               <span className="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-orange-tint text-orange"><Icon name="ban" /></span>
               <div><b>Copie désactivée</b><div className="text-muted">Ctrl+C, Ctrl+S et Ctrl+P sont bloqués pour protéger l'œuvre.</div></div>
             </div>
@@ -258,11 +258,11 @@ export default function Reader() {
             <div className="absolute inset-x-3.5 bottom-3.5 z-30 flex flex-col gap-3.5 rounded-[20px] p-5 text-white shadow-[0_20px_40px_-14px_rgba(4,28,92,.6)] lg:hidden" style={{ background: 'linear-gradient(125deg,#041C5C,#1560DC)' }}>
               <div className="flex justify-between"><b>Affichage</b><button onClick={() => setPanel(null)} aria-label="Fermer"><Icon name="cross-small" /></button></div>
               <div className="flex items-center gap-3">
-                <span className="text-[13px]">A</span>
+                <span className="text-[14px]">A</span>
                 <input type="range" min={0} max={3} value={SIZES.indexOf(size)} onChange={(e) => { const v = SIZES[Number(e.target.value)]; setSize(v); savePref('adj-reader-size', v) }} className="flex-1 accent-orange" aria-label="Taille du texte" />
                 <span className="text-xl">A</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center text-[13px]">
+              <div className="grid grid-cols-3 gap-2 text-center text-[14px]">
                 <button onClick={() => changeTheme('light')} className={`rounded-[10px] bg-white p-2.5 text-ink ${theme === 'light' ? 'font-semibold ring-2 ring-orange' : ''}`}>Clair</button>
                 <button onClick={() => changeTheme('sepia')} className={`rounded-[10px] bg-[#F3E9D4] p-2.5 text-ink ${theme === 'sepia' ? 'font-semibold ring-2 ring-orange' : ''}`}>Sépia</button>
                 <button onClick={() => changeTheme('dark')} className={`rounded-[10px] border border-white/20 bg-[#020E30] p-2.5 ${theme === 'dark' ? 'font-semibold ring-2 ring-orange' : ''}`}>Sombre</button>
@@ -275,9 +275,9 @@ export default function Reader() {
         {panel === 'toc' && (
           <aside className="absolute inset-y-0 right-0 z-40 flex w-[min(92vw,360px)] flex-col gap-1 overflow-hidden px-5 py-6 text-white lg:static" style={{ background: 'linear-gradient(180deg,#041C5C,#0A3A9E 70%,#1560DC)' }}>
             <div className="mb-3.5 flex items-center justify-between"><b className="text-lg">Sommaire</b><button onClick={() => setPanel(null)} className="opacity-60 hover:opacity-100" aria-label="Fermer le sommaire"><Icon name="cross-small" /></button></div>
-            <input className="mb-2.5 w-full rounded-[10px] bg-white/10 px-3.5 py-2.5 text-[13px] text-white outline-none placeholder:text-white/70" placeholder={`Chercher une ${unit.toLowerCase()}…`} value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Chercher dans le sommaire" />
+            <input className="mb-2.5 w-full rounded-[10px] bg-white/10 px-3.5 py-2.5 text-[14px] text-white outline-none placeholder:text-white/70" placeholder={`Chercher une ${unit.toLowerCase()}…`} value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Chercher dans le sommaire" />
             {toc.bookmarks.length > 0 && (
-              <div className="mb-2 rounded-xl bg-white/8 p-2 text-[13px]">
+              <div className="mb-2 rounded-xl bg-white/8 p-2 text-[14px]">
                 <div className="px-2 pb-1 text-xs opacity-70">Mes signets</div>
                 {toc.bookmarks.map((b: any) => {
                   const s = toc.sections.find((x: any) => x.id === b.section)
@@ -302,7 +302,7 @@ export default function Reader() {
                       <span className="flex-1 truncate">{s.title || `${unit} ${s.number}`}</span>
                       {isCur && manifest ? <span className="text-xs text-orange">{Math.min(page, manifest.pages.length - 1) + 1}/{manifest.pages.length}</span>
                         : !s.readable ? <Icon name="lock" className="opacity-60" />
-                        : isRead ? <Icon name="check" /> : s.free && !toc.full_access ? <span className="text-[10px] opacity-70">extrait</span> : null}
+                        : isRead ? <Icon name="check" /> : s.free && !toc.full_access ? <span className="text-[12px] opacity-70">extrait</span> : null}
                     </button>
                   </li>
                 )
@@ -310,7 +310,7 @@ export default function Reader() {
             </ol>
             {user && toc.full_access && (
               <div className="mt-2 rounded-xl border border-white/15 bg-white/10 p-4">
-                <div className="flex justify-between text-[13px]"><span>Progression</span><b>{pct} %</b></div>
+                <div className="flex justify-between text-[14px]"><span>Progression</span><b>{pct} %</b></div>
                 <div className="mt-2.5 h-1.5 rounded-full bg-white/15"><div className="h-full rounded-full bg-orange shadow-[0_0_10px_rgba(255,107,41,.8)]" style={{ width: `${pct}%` }} /></div>
               </div>
             )}

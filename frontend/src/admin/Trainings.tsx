@@ -77,7 +77,7 @@ function TrainingOverview({ training: t, onChanged, selected, onSelect, onEdit }
           const stateColor = { open: active ? '#86EFAC' : '#16A34A', full: '#C2410C', done: '#9A9DA6', upcoming: '#2F68B7', cancelled: '#B4421B' }[x.status as string]
           return (
             <button key={x.id} onClick={() => onSelect(x.id)} className={`${active ? 'card-navy' : 'card'} p-5 text-left`} aria-pressed={active}>
-              <div className="flex justify-between gap-2 text-[13px]">
+              <div className="flex justify-between gap-2 text-[14px]">
                 <b>{day(x.starts_at)} · {x.location ? x.location.split(',')[0] : 'En ligne'}</b>
                 <span style={{ color: stateColor }}>● {STATUS_LABEL[x.status]}</span>
               </div>
@@ -112,7 +112,7 @@ function SessionPanel({ session: s, onEditSession, onChanged }: { session: any; 
   const day = new Date(s.starts_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
   return (
     <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
-      <Panel title={`Inscrits — session du ${day}`} action={<button className="text-[13px] font-semibold text-blue" onClick={onEditSession}>Modifier la session</button>}>
+      <Panel title={`Inscrits — session du ${day}`} action={<button className="text-[14px] font-semibold text-blue" onClick={onEditSession}>Modifier la session</button>}>
         {enr.loading ? <Spinner /> : !enr.data?.length ? <p className="text-sm text-muted">Aucun inscrit pour le moment.</p> : (
           <div className="overflow-x-auto">
             <table className="table">
@@ -141,7 +141,7 @@ function SessionPanel({ session: s, onEditSession, onChanged }: { session: any; 
           </div>
         )}
       </Panel>
-      <section className="card flex h-max flex-col gap-2.5 p-5 text-[13px]">
+      <section className="card flex h-max flex-col gap-2.5 p-5 text-[14px]">
         <b className="text-[15px]">E-mail groupé</b>
         <div className="rounded-[10px] bg-paper px-3 py-2.5">À : {confirmed} inscrit(s) confirmé(s) · session du {day}</div>
         <input className="input !min-h-0 !py-2.5 font-semibold" placeholder="Objet" value={mail.subject} onChange={(e) => setMail({ ...mail, subject: e.target.value })} aria-label="Objet" />

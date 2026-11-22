@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { ArticleBanner, PostBanner, splitForMiddle, type Banner } from '../components/ArticleBanner'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ShareButtons } from '../components/Share'
 import { PageHero } from '../components/PageHero'
-import { Empty, ErrorNote, Icon, Spinner } from '../components/ui'
+import { Empty, ErrorNote, Icon, initials, Spinner, WorkCover } from '../components/ui'
 import { post } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { dateFr } from '../lib/format'
@@ -34,53 +35,46 @@ export default function Blog() {
     <>
       <PageHero crumbs={[['Accueil', '/'], ['Blog']]} eyebrow="LE CARNET" title="Réflexions pour" accent="grandir chaque semaine."
         text="La punchline du jour, des Papos de Tiékar et des articles sur le leadership, l'écriture et l'entraide." />
-      <div className="container-x relative z-[1] flex flex-wrap items-center gap-2.5">
-        <button onClick={() => { upd('category', ''); upd('kind', '') }} aria-pressed={!cat && !kind} className={`rounded-full px-[18px] py-2.5 text-sm font-medium ${!cat && !kind ? 'bg-ink text-white' : 'bg-paper'}`}>Tous</button>
-        {cats.data?.map((c) => (
-          <button key={c.id} onClick={() => upd('category', c.slug)} aria-pressed={cat === c.slug} className={`rounded-full px-[18px] py-2.5 text-sm font-medium ${cat === c.slug ? 'bg-ink text-white' : 'bg-paper'}`}>{c.name}</button>
-        ))}
-        {KINDS.filter((k) => ['punchline', 'papo'].includes(k.value)).map((k) => (
-          <button key={k.value} onClick={() => upd('kind', k.value)} aria-pressed={kind === k.value} className={`rounded-full px-[18px] py-2.5 text-sm font-medium ${kind === k.value ? 'bg-orange text-white' : 'bg-orange-tint text-orange-dark'}`}>{k.label}</button>
-        ))}
-        <form className="relative ml-auto w-full max-w-[300px]" onSubmit={(e) => { e.preventDefault(); upd('q', search) }}>
+      <div className="container-x flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0" role="group" aria-label="Rubriques">
+          {[{ key: 'tous', label: 'Tous', on: !cat && !kind, go: () => { const p = new URLSearchParams(params); p.delete('category'); p.delete('kind'); p.delete('page'); setParams(p) } },
+            ...(cats.data ?? []).map((c: any) => ({ key: c.slug, label: c.name, on: cat === c.slug, go: () => { const p = new URLSearchParams(params); p.set('category', c.slug); p.delete('kind'); p.delete('page'); setParams(p) } })),
+            ...KINDS.filter((k) => ['punchline', 'papo'].includes(k.value)).map((k) => ({ key: k.value, label: k.label, on: kind === k.value, go: () => { const p = new URLSearchParams(params); p.set('kind', k.value); p.delete('category'); p.delete('page'); setParams(p) } })),
+          ].map((x) => (
+            <button key={x.key} onClick={x.go} aria-pressed={x.on}
+              className={`shrink-0 rounded-full border-[1.5px] px-4 py-2 text-[14.5px] font-medium transition-colors ${x.on ? 'border-blue bg-blue text-white' : 'border-line bg-[var(--card)] hover:border-blue hover:text-blue'}`}>{x.label}</button>
+          ))}
+        </div>
+        <form className="input-icon w-full md:w-[280px] md:shrink-0" onSubmit={(e) => { e.preventDefault(); upd('q', search) }}>
           <label htmlFor="blog-q" className="sr-only">Rechercher</label>
-          <Icon name="search" className="absolute top-1/2 left-4 -translate-y-1/2 text-faint" />
-          <input id="blog-q" className="input !rounded-full !pl-11" placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Icon name="search" />
+          <input id="blog-q" className="input !rounded-full" placeholder="Rechercher un article" value={search} onChange={(e) => setSearch(e.target.value)} />
         </form>
       </div>
-      <div className="container-x mt-10 pb-24">
+      <div className="container-x mt-8 pb-24 md:mt-10">
         {loading ? <Spinner /> : !posts.length ? <Empty title="Rien trouvé">Essayez une autre rubrique ou un autre mot.</Empty> : (
           <>
             {lead && (
-              <Link to={`/blog/${lead.slug}`} className="card mb-8 grid overflow-hidden md:grid-cols-[1.1fr_1fr]">
-                <div className="hero-grad relative min-h-64">
-                  {lead.cover ? <img src={lead.cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                    : lead.kind === 'punchline' ? <p className="relative p-10 text-2xl leading-snug font-semibold text-white">« {lead.quote} »</p>
-                    : <img src="/mark-mono.svg" alt="" className="absolute -right-8 -bottom-10 h-64 opacity-10" />}
-                </div>
-                <div className="flex flex-col p-7 md:p-10">
-                  <div className="flex items-center gap-3 text-xs"><span className="chip chip-orange">À la une</span><span className="font-semibold text-blue">{lead.category?.name ?? lead.kind_label}</span><span className="text-faint">{lead.read_minutes} min</span></div>
-                  <h2 className="mt-4 text-[26px] leading-tight md:text-[30px]">{lead.kind === 'punchline' ? 'Punchline du jour' : lead.title}</h2>
-                  <p className="mt-3 text-muted">{lead.excerpt}</p>
-                  <div className="mt-auto flex items-center gap-3 pt-6 text-sm">
-                    <img src="/mark-color.svg" alt="" className="h-9 w-9 rounded-full bg-paper p-1" />
-                    <span><b className="block">Adjougbe</b><span className="text-xs text-muted">{dateFr(lead.published_at)}</span></span>
-                    <span className="ml-auto font-semibold text-blue">Lire →</span>
-                  </div>
+              <Link to={`/blog/${lead.slug}`} className="card group mb-8 grid overflow-hidden md:grid-cols-[1.25fr_1fr]">
+                <div className="aspect-[16/9] md:aspect-auto md:min-h-[340px]"><PostBanner p={lead} size="lead" /></div>
+                <div className="flex flex-col gap-3 p-6 md:p-10">
+                  <div className="flex flex-wrap items-center gap-2.5 text-[13px]"><span className="chip chip-orange">À la une</span><span className="font-semibold text-blue">{lead.category?.name ?? lead.kind_label}</span></div>
+                  <h2 className="text-[24px] leading-tight group-hover:text-blue md:text-[30px]">{lead.kind === 'punchline' ? 'La punchline du jour' : lead.title}</h2>
+                  {lead.kind !== 'punchline' && <p className="line-clamp-3 text-muted">{lead.excerpt}</p>}
+                  <Byline p={lead} />
                 </div>
               </Link>
             )}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {rest.filter(Boolean).map((p: any) => (
                 <Link key={p.id} to={`/blog/${p.slug}`} className="card group flex flex-col overflow-hidden">
-                  {p.kind === 'punchline' ? (
-                    <div className="hero-grad p-6 text-white"><p className="text-lg leading-snug font-semibold">« {p.quote} »</p></div>
-                  ) : p.cover ? <img src={p.cover} alt="" className="aspect-video w-full object-cover" loading="lazy" /> : null}
-                  <div className="flex flex-1 flex-col p-5">
-                    <div className="flex items-center gap-3 text-xs"><span className="font-semibold text-blue">{p.category?.name ?? p.kind_label}</span><span className="text-faint">{p.read_minutes} min · {dateFr(p.published_at)}</span></div>
-                    {p.kind !== 'punchline' && <h2 className="mt-2 text-lg leading-snug group-hover:text-blue">{p.title}</h2>}
-                    {p.kind !== 'punchline' && <p className="mt-1.5 line-clamp-2 text-sm text-muted">{p.excerpt}</p>}
-                    {p.members_only && <span className="chip chip-blue mt-3 self-start">Réservé aux membres</span>}
+                  <div className="aspect-[16/9] overflow-hidden"><PostBanner p={p} className="transition-transform duration-300 group-hover:scale-[1.03]" /></div>
+                  <div className="flex flex-1 flex-col gap-2 p-5">
+                    <span className="text-[13px] font-semibold text-blue">{p.category?.name ?? p.kind_label}</span>
+                    <h2 className="text-[18px] leading-snug group-hover:text-blue">{p.kind === 'punchline' ? 'Punchline du jour' : p.title}</h2>
+                    {p.kind !== 'punchline' && <p className="line-clamp-2 text-[15px] text-muted">{p.excerpt}</p>}
+                    {p.members_only && <span className="chip chip-blue self-start">Réservé aux membres</span>}
+                    <Byline p={p} small />
                   </div>
                 </Link>
               ))}
@@ -95,6 +89,15 @@ export default function Blog() {
         )}
       </div>
     </>
+  )
+}
+
+function Byline({ p, small }: { p: any; small?: boolean }) {
+  return (
+    <div className={`mt-auto flex items-center gap-3 border-t border-line pt-4 ${small ? 'text-[13px]' : 'text-sm'}`}>
+      <img src="/auteur-hero.webp" alt="" className={`${small ? 'h-8 w-8' : 'h-10 w-10'} rounded-full bg-blue-tint object-cover object-top`} />
+      <span className="leading-tight"><b className="block">Adjougbe</b><span className="text-muted">{dateFr(p.published_at)} · {p.read_minutes} min</span></span>
+    </div>
   )
 }
 
@@ -121,70 +124,129 @@ export function PostDetail() {
   }
   const toc = (p.body.match(/<h2[^>]*>(.*?)<\/h2>/g) ?? []).map((h: string) => h.replace(/<[^>]+>/g, ''))
   const html = toc.length ? p.body.replace(/<h2([^>]*)>(.*?)<\/h2>/g, (_m: string, a: string, t: string) => `<h2${a} id="${slugify(t.replace(/<[^>]+>/g, ''))}">${t}</h2>`) : p.body
-  const shareText = p.kind === 'punchline' ? `« ${p.quote} » — Adjougbe` : p.title
+  const shareText = p.kind === 'punchline' ? `« ${p.quote} » — Adjougbe` : `${p.title} — ${p.excerpt}`.slice(0, 220)
+  const cardUrl = p.kind === 'punchline' ? `/api/blog/posts/${p.slug}/card.png` : undefined
+  const label = p.category?.name ?? p.kind_label
+  const bs: Banner[] = p.banners ?? []
+  const at = (pos: string) => bs.filter((b) => b.position === pos).map((b, i) => <ArticleBanner key={pos + i} b={b} />)
+  const [first, rest] = bs.some((b) => b.position === 'milieu') ? splitForMiddle(html) : [html, '']
   return (
-    <>
-      <PageHero crumbs={[['Accueil', '/'], ['Blog', '/blog'], [p.category?.name ?? p.kind_label]]}
-        eyebrow={`${(p.category?.name ?? p.kind_label).toUpperCase()} · ${p.read_minutes} MIN`}
-        title={p.kind === 'punchline' ? `« ${p.quote} »` : p.title}
-        text={`Par ${p.author_name} · ${dateFr(p.published_at)}`} />
-      <article className="container-x grid gap-10 pb-24 lg:grid-cols-[180px_1fr_220px]">
-        <aside className="order-2 lg:order-none">
-          <div className="lg:sticky lg:top-32">
-            <div className="mb-3 text-xs font-semibold tracking-[.1em] text-faint">PARTAGER</div>
-            <div className="flex flex-wrap gap-2 lg:flex-col"><ShareButtons url={`/blog/${p.slug}`} text={shareText} slug={p.slug} cardUrl={p.kind === 'punchline' ? `/api/blog/posts/${p.slug}/card.png` : undefined} /></div>
+    <article className="pb-24">
+      {/* En-tête : titre puis bannière de l'article (image ou visuel généré). */}
+      <header className="container-x max-w-[1100px] pt-8 md:pt-12">
+        <nav aria-label="Fil d'Ariane" className="text-[14px] text-muted">
+          <Link to="/" className="hover:text-blue">Accueil</Link> / <Link to="/blog" className="hover:text-blue">Blog</Link> / <span aria-current="page">{label}</span>
+        </nav>
+        <div className="mt-5 max-w-[820px]">
+          <span className="chip chip-blue">{label}</span>
+          <h1 className="mt-4 text-[30px] leading-[1.15] md:text-[44px]">{p.kind === 'punchline' ? 'La punchline du jour' : p.title}</h1>
+          {p.kind !== 'punchline' && p.excerpt && <p className="mt-4 text-[17px] leading-relaxed text-ink-soft md:text-lg">{p.excerpt}</p>}
+          <div className="mt-6 flex items-center gap-3 text-sm">
+            <img src="/auteur-hero.webp" alt="" className="h-11 w-11 rounded-full bg-blue-tint object-cover object-top" />
+            <span className="leading-tight"><b className="block">{p.author_name}</b><span className="text-muted">{dateFr(p.published_at)} · {p.read_minutes} min de lecture</span></span>
           </div>
-        </aside>
+        </div>
+        <div className="mt-8 aspect-[16/9] overflow-hidden rounded-2xl shadow-[0_30px_60px_-34px_rgba(4,28,92,.55)] md:aspect-[2/1]">
+          <PostBanner p={p} size="hero" />
+        </div>
+      </header>
+
+      <div className="container-x mt-10 grid max-w-[1100px] gap-10 md:mt-14 lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-14">
         <div className="min-w-0">
-          {p.cover && <img src={p.cover} alt="" className="-mt-16 mb-8 w-full rounded-2xl shadow-[0_30px_60px_-30px_rgba(4,28,92,.5)] md:-mt-24" />}
           {p.media_url && <div className="mb-8">{embed(p.media_url)}</div>}
           {p.locked ? (
-            <div className="grid gap-4 rounded-2xl bg-blue-tint p-8">
+            <div className="grid gap-4 rounded-2xl bg-blue-tint p-6 md:p-8">
               <p className="text-lg">{p.excerpt}</p>
               <p className="font-semibold">La suite est réservée aux membres. L'inscription est gratuite.</p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Link to={`/inscription?suivant=/blog/${p.slug}`} className="btn btn-primary">Créer un compte</Link>
                 <Link to={`/connexion?suivant=/blog/${p.slug}`} className="btn btn-ghost">Se connecter</Link>
               </div>
             </div>
-          ) : p.body ? <div className="prose-adj article-prose" dangerouslySetInnerHTML={{ __html: html }} /> : null}
+          ) : (
+            <>
+              {at('debut')}
+              {first && <div className="prose-adj article-prose" dangerouslySetInnerHTML={{ __html: first }} />}
+              {at('milieu')}
+              {rest && <div className="prose-adj article-prose" dangerouslySetInnerHTML={{ __html: rest }} />}
+              {at('fin')}
+            </>
+          )}
 
-          <div className="mt-10 flex flex-wrap items-center gap-2 border-y border-line py-5">
-            {Object.entries(REACTIONS).map(([k, e]) => (
-              <button key={k} onClick={() => react(k)} disabled={!user} title={user ? '' : 'Connectez-vous pour réagir'} aria-pressed={p.reactions.mine.includes(k)}
-                className={`rounded-full border-[1.5px] px-3 py-1.5 ${p.reactions.mine.includes(k) ? 'border-orange bg-orange/10' : 'border-line'}`}>
-                {e} <span className="text-sm tabular-nums">{p.reactions.counts[k]}</span>
-              </button>
-            ))}
-            {p.tags.map((t: any) => <Link key={t.id} to={`/blog?q=${t.name}`} className="chip ml-1">#{t.name}</Link>)}
-          </div>
+          {/* Réactions et partage, réunis : c'est le moment où le lecteur a envie d'agir. */}
+          <section className="card mt-12 grid gap-6 p-6 md:p-8" aria-labelledby="reagir">
+            <div>
+              <h2 id="reagir" className="text-[22px]">{p.kind === 'punchline' ? 'Cette punchline vous parle ?' : 'Cet article vous a plu ?'}</h2>
+              <p className="mt-1 text-muted">{user ? 'Réagissez, puis partagez-le à quelqu\u2019un qui en a besoin aujourd\u2019hui.' : 'Partagez-le à quelqu\u2019un qui en a besoin aujourd\u2019hui.'}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(REACTIONS).map(([k, e]) => (
+                <button key={k} onClick={() => react(k)} disabled={!user} title={user ? '' : 'Connectez-vous pour réagir'} aria-pressed={p.reactions.mine.includes(k)}
+                  className={`flex items-center gap-2 rounded-full border-[1.5px] px-4 py-2 text-[17px] transition-colors disabled:cursor-not-allowed ${p.reactions.mine.includes(k) ? 'border-orange bg-orange-tint' : 'border-line hover:border-orange'}`}>
+                  {e} <span className="text-[14px] font-medium tabular-nums">{p.reactions.counts[k]}</span>
+                </button>
+              ))}
+            </div>
+            <div className="border-t border-line pt-6"><ShareButtons url={`/blog/${p.slug}`} text={shareText} slug={p.slug} cardUrl={cardUrl} /></div>
+            {p.tags.length > 0 && <div className="flex flex-wrap gap-2">{p.tags.map((t: any) => <Link key={t.id} to={`/blog?q=${t.name}`} className="chip">#{t.name}</Link>)}</div>}
+          </section>
 
-          <Link to="/boutique" className="card mt-8 flex items-center gap-4 p-4 hover:ring-2 hover:ring-blue-tint">
-            <span className="hero-grad grid h-[90px] w-[60px] shrink-0 place-items-center rounded-md"><img src="/mark-mono.svg" alt="" className="h-8" /></span>
-            <span className="flex-1"><b className="block">Les livres d'Adjougbe</b><span className="text-sm text-muted">Extrait gratuit disponible, sans compte</span></span>
-            <span className="btn btn-blue btn-sm">Voir les œuvres</span>
-          </Link>
-
+          <BooksPromo />
           {p.allow_comments && <Comments slug={p.slug} />}
-          {p.related?.length > 0 && (
-            <section className="mt-14">
-              <h2 className="mb-4 text-2xl">À lire aussi</h2>
-              <ul className="grid gap-3">{p.related.map((r: any) => <li key={r.id}><Link to={`/blog/${r.slug}`} className="font-medium text-blue hover:underline">{r.title}</Link></li>)}</ul>
-            </section>
-          )}
         </div>
+
         <aside className="hidden lg:block">
-          {toc.length > 0 && (
-            <nav className="sticky top-32" aria-label="Sommaire de l'article">
-              <div className="mb-3 text-xs font-semibold tracking-[.1em] text-faint">SOMMAIRE</div>
-              <ol className="grid gap-2 border-l-2 border-blue-tint pl-4 text-sm">
-                {toc.map((t: string) => <li key={t}><a href={`#${slugify(t)}`} className="text-ink-soft hover:text-blue">{t}</a></li>)}
-              </ol>
-            </nav>
-          )}
+          <div className="sticky top-32 grid gap-8">
+            {toc.length > 0 && (
+              <nav aria-label="Sommaire de l'article">
+                <b className="mb-3 block text-[14px]">Dans cet article</b>
+                <ol className="grid gap-2.5 border-l-2 border-blue-tint pl-4 text-[14.5px]">
+                  {toc.map((t: string) => <li key={t}><a href={`#${slugify(t)}`} className="text-ink-soft hover:text-blue">{t}</a></li>)}
+                </ol>
+              </nav>
+            )}
+            <ShareButtons url={`/blog/${p.slug}`} text={shareText} slug={p.slug} cardUrl={cardUrl} vertical />
+          </div>
         </aside>
-      </article>
-    </>
+      </div>
+
+      {p.related?.length > 0 && (
+        <section className="container-x mt-16 max-w-[1100px]">
+          <h2 className="text-[26px]">À lire aussi</h2>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {p.related.map((r: any) => (
+              <Link key={r.id} to={`/blog/${r.slug}`} className="card group flex flex-col overflow-hidden">
+                <div className="aspect-[16/9] overflow-hidden"><PostBanner p={r} className="transition-transform duration-300 group-hover:scale-[1.03]" /></div>
+                <div className="flex flex-1 flex-col gap-2 p-5">
+                  <span className="text-[13px] font-semibold text-blue">{r.category?.name ?? r.kind_label}</span>
+                  <h3 className="text-[17px] leading-snug group-hover:text-blue">{r.kind === 'punchline' ? 'Punchline du jour' : r.title}</h3>
+                  <span className="mt-auto pt-2 text-[13px] text-muted">{dateFr(r.published_at)} · {r.read_minutes} min</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+    </article>
+  )
+}
+
+/** Mise en avant des livres en fin d'article, avec les vraies couvertures. */
+function BooksPromo() {
+  const works = useApi<any[]>('/api/catalog/works/')
+  const list = (Array.isArray(works.data) ? works.data : (works.data as any)?.results ?? []).slice(0, 3)
+  return (
+    <Link to="/boutique" className="card-navy group mt-8 grid items-center gap-6 p-6 md:grid-cols-[auto_1fr_auto] md:p-8">
+      <span className="pointer-events-none absolute inset-0 opacity-[.05]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '80px 80px' }} />
+      <span className="relative flex -space-x-6">
+        {list.map((w: any, i: number) => <span key={w.id} className="w-[64px] drop-shadow-xl md:w-[72px]" style={{ transform: `rotate(${(i - 1) * 6}deg)` }}><WorkCover work={w} /></span>)}
+      </span>
+      <span className="relative">
+        <b className="block text-[20px]">Les livres d'Adjougbe</b>
+        <span className="mt-1 block text-white/80">Commencez par un extrait gratuit, sans créer de compte.</span>
+      </span>
+      <span className="btn btn-primary relative justify-self-start shadow-orange md:justify-self-end">Voir les œuvres</span>
+    </Link>
   )
 }
 
@@ -205,29 +267,38 @@ function Comments({ slug }: { slug: string }) {
     } catch (e) { setError(e) }
   }
   return (
-    <section className="mt-14">
-      <h2 className="mb-1 text-2xl">Commentaires ({data?.length ?? 0})</h2>
-      <p className="mb-6 text-sm text-muted">Modérés avant publication</p>
-      <div className="grid gap-5">
-        {data?.length === 0 && <p className="text-muted">Soyez le premier à réagir.</p>}
+    <section className="mt-12" aria-labelledby="commentaires">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="commentaires" className="text-[24px]">Commentaires <span className="text-muted">({data?.length ?? 0})</span></h2>
+        <span className="text-sm text-muted">Relus avant publication</span>
+      </div>
+      <div className="mt-6 grid gap-4">
+        {data?.length === 0 && <p className="rounded-2xl bg-paper px-5 py-4 text-muted">Aucun commentaire pour l'instant. Lancez la conversation.</p>}
         {data?.map((c) => (
-          <div key={c.id} className={`${c.parent ? 'ml-8 border-l-4 border-orange pl-4' : ''}`}>
-            <p className="text-sm"><strong>{c.is_author_reply ? 'Adjougbe' : c.author}</strong> <span className="text-muted">· {dateFr(c.created_at)}</span>
-              {c.is_author_reply && <span className="chip chip-orange ml-2">L'auteur</span>}</p>
-            <p className="mt-1 whitespace-pre-line">{c.body}</p>
+          <div key={c.id} className={`flex gap-3 ${c.parent ? 'ml-6 md:ml-12' : ''}`}>
+            {c.is_author_reply ? <img src="/auteur-hero.webp" alt="" className="h-10 w-10 shrink-0 rounded-full bg-blue-tint object-cover object-top" />
+              : <span className="avatar h-10 w-10 text-[13px]">{initials(c.author || '?')}</span>}
+            <div className={`min-w-0 flex-1 rounded-2xl px-4 py-3 ${c.is_author_reply ? 'bg-orange-tint' : 'bg-[var(--card)] shadow-[0_8px_24px_-18px_rgba(4,28,92,.4)]'}`}>
+              <p className="text-sm"><strong>{c.is_author_reply ? 'Adjougbe' : c.author}</strong> <span className="text-muted">· {dateFr(c.created_at)}</span>
+                {c.is_author_reply && <span className="chip chip-orange ml-2">L'auteur</span>}</p>
+              <p className="mt-1 whitespace-pre-line">{c.body}</p>
+            </div>
           </div>
         ))}
       </div>
       {user ? (
-        <div className="mt-8 grid gap-3">
-          <label htmlFor="comment" className="font-medium">Votre commentaire</label>
-          <textarea id="comment" className="input" value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} />
+        <div className="card mt-6 grid gap-3 p-5">
+          <label htmlFor="comment" className="font-semibold">Votre commentaire</label>
+          <textarea id="comment" className="input" value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} placeholder="Ce que ce texte vous inspire…" />
           {msg && <p className="text-sm text-ok">{msg}</p>}
           <ErrorNote error={error} />
-          <button className="btn btn-dark justify-self-start" onClick={send} disabled={body.trim().length < 2}>Publier</button>
+          <button className="btn btn-blue justify-self-start" onClick={send} disabled={body.trim().length < 2}>Publier le commentaire</button>
         </div>
       ) : (
-        <p className="mt-8"><Link to={`/connexion?suivant=/blog/${slug}`} className="link">Connectez-vous</Link> pour commenter.</p>
+        <div className="card mt-6 flex flex-wrap items-center justify-between gap-4 p-5">
+          <span>Connectez-vous pour rejoindre la conversation.</span>
+          <Link to={`/connexion?suivant=/blog/${slug}`} className="btn btn-blue btn-sm">Se connecter</Link>
+        </div>
       )}
     </section>
   )

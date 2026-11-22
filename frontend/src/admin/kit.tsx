@@ -13,7 +13,7 @@ export function AdminPage({ title, actions, children, intro, crumb, search = fal
     <div className="grid gap-5">
       <header className="flex flex-wrap items-end gap-4">
         <div className="min-w-0 flex-1">
-          {crumb && <div className="text-[13px] text-muted">{crumb}</div>}
+          {crumb && <div className="text-[14px] text-muted">{crumb}</div>}
           <h1 className="mt-0.5 text-[24px] md:text-[28px]">{title}</h1>
           {intro && <div className="mt-1 text-sm text-muted">{intro}</div>}
         </div>
@@ -31,7 +31,7 @@ export function Stat({ label, value, sub, tone, subTone }: { label: string; valu
       {tone === 'navy' && <img src="/mark-mono.svg" alt="" className="pointer-events-none absolute -right-8 -bottom-8 h-[150px] w-[150px] opacity-10" />}
       <div className={`text-xs font-semibold tracking-[.08em] uppercase ${tone ? 'opacity-85' : 'text-faint'}`}>{label}</div>
       <div className={`mt-2 font-bold tabular-nums ${tone === 'navy' ? 'text-[28px] md:text-[34px]' : 'text-[26px] md:text-[30px]'}`}>{value}</div>
-      {sub && <div className={`text-[13px] ${tone ? 'opacity-90' : subTone === 'ok' ? 'text-ok' : 'text-muted'}`}>{sub}</div>}
+      {sub && <div className={`text-[14px] ${tone ? 'opacity-90' : subTone === 'ok' ? 'text-ok' : 'text-muted'}`}>{sub}</div>}
     </div>
   )
 }
@@ -51,7 +51,7 @@ export function Tabs({ tabs, value, onChange }: { tabs: { value: string; label: 
 /** Filtres en pastilles (maquettes Journal, Commandes). */
 export function Pills({ options, value, onChange }: { options: [string, ReactNode][]; value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex flex-wrap gap-2 text-[13px]">
+    <div className="flex flex-wrap gap-2 text-[14px]">
       {options.map(([v, l]) => (
         <button key={v} onClick={() => onChange(v)} aria-pressed={value === v}
           className={`rounded-full px-3.5 py-2 ${value === v ? 'bg-ink font-semibold text-white' : 'bg-[var(--card)]'}`}>{l}</button>
@@ -219,7 +219,7 @@ export function AreaChart({ data, format, peakLabel }: { data: { label: string; 
         {data[peak]?.value > 0 && <circle cx={pts[peak][0]} cy={pts[peak][1]} r="6" fill="#FF6B29" stroke="#fff" strokeWidth="3" />}
         {data.map((d, i) => <rect key={i} x={pts[i][0] - 300 / n} y="0" width={600 / n} height="200" fill="transparent"><title>{`${d.label} : ${format(d.value)}`}</title></rect>)}
       </svg>
-      <figcaption className="flex justify-between text-[11px] text-faint">
+      <figcaption className="flex justify-between text-[12px] text-faint">
         <span>{data[0]?.label}</span>
         {data[peak]?.value > 0 && <span className="font-semibold text-orange">Pic : {data[peak].label} · {format(data[peak].value)}{peakLabel ? ` · ${peakLabel}` : ''}</span>}
         <span>{data[data.length - 1]?.label}</span>

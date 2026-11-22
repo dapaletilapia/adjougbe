@@ -95,7 +95,7 @@ export default function AdminLayout() {
             className={({ isActive }) => `flex items-center gap-2.5 rounded-[10px] px-3 py-[11px] ${isActive ? 'bg-white font-semibold text-blue-dark' : 'text-white/85 hover:bg-white/10'}`}>
             <Icon name={s.icon} className="w-[18px] justify-center text-base" />
             {s.label}
-            {badge(s.badge) && <span className="ml-auto text-[11px] font-bold text-orange">{badge(s.badge)}</span>}
+            {badge(s.badge) && <span className="ml-auto text-[12px] font-bold text-orange">{badge(s.badge)}</span>}
           </NavLink>
         ))}
       </nav>
@@ -122,7 +122,7 @@ export default function AdminLayout() {
       <div className="min-w-0 pb-24 md:pb-0">
         <main className="px-4 py-5 md:px-9 md:py-8"><Outlet /></main>
       </div>
-      <nav className="fixed inset-x-3 bottom-3 z-40 flex justify-around rounded-2xl bg-[var(--card)] p-1.5 text-[11px] shadow-[0_10px_20px_-14px_rgba(4,28,92,.5)] md:hidden" aria-label="Navigation mobile">
+      <nav className="fixed inset-x-3 bottom-3 z-40 flex justify-around rounded-2xl bg-[var(--card)] p-1.5 text-[12px] shadow-[0_10px_20px_-14px_rgba(4,28,92,.5)] md:hidden" aria-label="Navigation mobile">
         {tabs.map((t) => (
           <NavLink key={t.to} to={t.to} end={t.end}
             className={({ isActive }) => `flex flex-col items-center gap-1 rounded-xl px-3.5 py-2.5 ${isActive ? 'bg-blue font-semibold text-white' : 'text-muted'}`}>
@@ -238,7 +238,7 @@ export function OtpGate() {
               <button className="btn btn-primary mt-2 !py-3.5" disabled={busy || (backup ? code.replace(/\W/g, '').length < 8 : code.length !== 6)}>Vérifier</button>
             </form>
             {user.otp_enabled && (
-              <p className="text-center text-[13px] text-muted">
+              <p className="text-center text-[14px] text-muted">
                 {backup ? <button className="font-semibold text-blue" onClick={() => setBackup(false)}>Utiliser l'application</button>
                   : <>Code perdu ? <button className="font-semibold text-blue" onClick={() => setBackup(true)}>Utiliser un code de secours</button></>}
               </p>

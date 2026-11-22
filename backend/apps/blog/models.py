@@ -51,6 +51,9 @@ class Post(TimeStampedModel):
     quote = models.TextField(blank=True, help_text="Texte de la punchline (rubrique Punchline du jour)")
     cover = models.ImageField(upload_to="blog/", blank=True)
     media_url = models.URLField(blank=True, help_text="Vidéo YouTube/TikTok ou fichier audio")
+    # Bannières insérées dans l'article : [{"position": "debut|milieu|fin", "image": "/media/…", "title", "text",
+    # "cta", "link"}]. Validées par AdminPostSerializer.
+    banners = models.JSONField(default=list, blank=True)
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="posts")
     tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="posts")

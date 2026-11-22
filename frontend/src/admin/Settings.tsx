@@ -82,7 +82,7 @@ function Payments({ settings, onSaved }: { settings: any; onSaved: () => void })
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Panel title="Moyens de paiement">
-        <ul className="grid gap-2.5 text-[13px]">
+        <ul className="grid gap-2.5 text-[14px]">
           {PAYMENT_METHODS.map((m) => (
             <li key={m.value} className="flex items-center gap-3 rounded-[10px] bg-paper p-3">
               <PayLogo method={m.value} />
@@ -93,7 +93,7 @@ function Payments({ settings, onSaved }: { settings: any; onSaved: () => void })
         </ul>
       </Panel>
       <Panel title="Passerelle">
-        <dl className="grid gap-2.5 text-[13px]">
+        <dl className="grid gap-2.5 text-[14px]">
           <div className="flex justify-between rounded-[10px] bg-paper p-3"><dt>Opérateur</dt><dd className="font-semibold">CinetPay (Mobile Money + carte)</dd></div>
           <div className="flex justify-between rounded-[10px] bg-paper p-3"><dt>Devise</dt><dd className="font-semibold">FCFA (XOF)</dd></div>
           <div className="flex justify-between rounded-[10px] bg-paper p-3"><dt>Taux affiché pour la diaspora</dt><dd className="font-semibold">1 € = {Number(settings.eur_rate).toLocaleString('fr-FR')} F</dd></div>
@@ -120,7 +120,7 @@ function Emails() {
   return (
     <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
       <Panel title="E-mails automatiques">
-        <ul className="grid gap-2 text-[13px]">
+        <ul className="grid gap-2 text-[14px]">
           {AUTO_EMAILS.map(([t, d]) => (
             <li key={t} className="flex items-center gap-3 rounded-[10px] bg-paper p-3">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-tint text-blue"><Icon name="envelope" /></span>
@@ -131,7 +131,7 @@ function Emails() {
         </ul>
       </Panel>
       <Panel title="Envoi">
-        <p className="text-[13px] text-muted">Les e-mails partent par le service transactionnel configuré sur le serveur (Brevo, Postmark…). Les newsletters se gèrent dans le module <Link to="/admin/newsletter" className="font-semibold text-blue">Newsletter</Link>.</p>
+        <p className="text-[14px] text-muted">Les e-mails partent par le service transactionnel configuré sur le serveur (Brevo, Postmark…). Les newsletters se gèrent dans le module <Link to="/admin/newsletter" className="font-semibold text-blue">Newsletter</Link>.</p>
       </Panel>
     </div>
   )
@@ -225,7 +225,7 @@ function Security({ settings, onSaved }: { settings: any; onSaved: () => void })
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Panel title="Lecture et sécurité">
-        <div className="grid gap-2.5 text-[13px]">
+        <div className="grid gap-2.5 text-[14px]">
           <label className="flex items-center justify-between gap-3 rounded-[10px] bg-paper p-3">Appareils max par compte
             <input type="number" min={1} max={5} className="input !min-h-9 !w-20 !bg-[var(--card)] text-right font-bold" value={devices} onChange={(e) => setDevices(Number(e.target.value))} />
           </label>
@@ -251,7 +251,7 @@ function Alerts() {
   if (list.loading) return <Spinner />
   if (!list.data?.results.length) return <p className="text-sm text-muted">Aucune alerte.</p>
   return (
-    <ul className="grid gap-2 text-[13px]">
+    <ul className="grid gap-2 text-[14px]">
       {list.data.results.map((a: any) => (
         <li key={a.id} className="flex items-center gap-3 rounded-[10px] bg-paper p-3">
           <span className="min-w-0 flex-1"><b className="block">{a.kind_label} · {a.user_email}</b><span className="text-muted">{a.detail} · {dateTime(a.created_at)}</span></span>
@@ -268,7 +268,7 @@ function Releases() {
   const { data, reload } = useApi<any[]>('/api/backoffice/releases/')
   const [f, setF] = useState({ version: '', released_at: new Date().toISOString().slice(0, 10), content: '', delivered_by: "All'Digit" })
   return (
-    <div className="grid gap-4 text-[13px]">
+    <div className="grid gap-4 text-[14px]">
       <ol className="grid gap-3">
         {data?.map((r) => (
           <li key={r.id} className="border-l-4 border-orange pl-3"><b>v{r.version} · {r.released_at} · {r.delivered_by}</b><p className="whitespace-pre-line text-muted">{r.content}</p></li>
@@ -332,7 +332,7 @@ export function Journal() {
                   <span className="absolute top-[3px] -left-[26px] h-4 w-4 rounded-full" style={{ background: dot, boxShadow: `0 0 0 4px ${ring}` }} />
                   <div className="min-w-0 flex-1">
                     <b className="text-sm">{what}{type && ['create', 'update', 'delete'].includes(a.action) ? ` · ${type}` : ''}{a.summary && !isLogin ? ` : ${a.summary}` : ''}</b>
-                    <div className="text-[13px] text-muted">{isLogin && a.summary ? `${a.summary} · ` : ''}par {a.actor}{a.ip_address ? ` · ${a.ip_address}` : ''}</div>
+                    <div className="text-[14px] text-muted">{isLogin && a.summary ? `${a.summary} · ` : ''}par {a.actor}{a.ip_address ? ` · ${a.ip_address}` : ''}</div>
                   </div>
                   <span className="shrink-0 text-xs text-faint">{dayLabel(a.created_at)}</span>
                 </li>

@@ -37,7 +37,7 @@ export default function Orders() {
               <tbody>
                 {list.data?.results.map((o: any) => (
                   <tr key={o.id} className={`cursor-pointer ${open?.id === o.id ? 'bg-blue-tint' : ''}`} onClick={() => setOpen(o)}>
-                    <td className="whitespace-nowrap">{o.reference}<div className="text-[11px] text-faint">{dateTime(o.created_at)}</div></td>
+                    <td className="whitespace-nowrap">{o.reference}<div className="text-[12px] text-faint">{dateTime(o.created_at)}</div></td>
                     <td>{o.customer.name}</td>
                     <td className="max-w-44 truncate">{o.items.map((i: any) => i.label).join(', ')}</td>
                     <td className="font-bold tabular-nums">{o.total.toLocaleString('fr-FR')}</td>
@@ -69,7 +69,7 @@ function OrderDetail({ order: o, onChanged, onClose }: { order: any; onChanged: 
     try { const r = await post(`/api/backoffice/orders/${o.id}/${path}/`, body); if (r?.reference) onChanged(r); toast(msg) } catch (e) { setError(e) }
   }
   return (
-    <div className="grid gap-4 text-[13px]">
+    <div className="grid gap-4 text-[14px]">
       <div className="flex items-center gap-2">
         <b className="flex-1 text-[15px]">{o.reference}</b>
         <StatusChip status={o.status} label={o.status_label} />
@@ -93,7 +93,7 @@ function OrderDetail({ order: o, onChanged, onClose }: { order: any; onChanged: 
             <li key={i} className="relative">
               <span className={`absolute top-1 -left-[23px] h-3 w-3 rounded-full ${i === 0 ? 'bg-orange' : 'bg-bright'} ring-4 ring-[var(--card)]`} />
               <span className="mr-2 text-faint tabular-nums">{new Date(h.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>{h.label}
-              <div className="text-[11px] text-faint">{dateTime(h.at)}</div>
+              <div className="text-[12px] text-faint">{dateTime(h.at)}</div>
             </li>
           ))}
         </ol>

@@ -55,7 +55,7 @@ class PostDetailSerializer(PostCardSerializer):
 
     class Meta(PostCardSerializer.Meta):
         fields = PostCardSerializer.Meta.fields + ["tags", "body", "locked", "reactions", "allow_comments",
-                                                   "seo_description", "author_name"]
+                                                   "seo_description", "author_name", "banners"]
 
     def _locked(self, obj):
         req = self.context.get("request")
@@ -99,7 +99,7 @@ class AdminPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ["id", "slug", "title", "kind", "excerpt", "body", "quote", "cover", "media_url", "category",
+        fields = ["id", "slug", "title", "kind", "excerpt", "body", "quote", "cover", "media_url", "banners", "category",
                   "category_id", "tags", "tag_names", "status", "published_at", "members_only", "allow_comments",
                   "seo_description", "view_count", "share_count", "is_live", "pending_comments", "created_at",
                   "updated_at"]
@@ -110,6 +110,30 @@ class AdminPostSerializer(serializers.ModelSerializer):
 
     def validate_body(self, value):
         return sanitize_html(value)
+
+    def validate_banners(self, value):
+        """Au plus 4 bannières ; liens internes (/…) ou https uniquement ; images du site ou https."""
+        if not isinstance(value, list) or len(value) > 4:
+            raise serializers.ValidationError("4 bannières au maximum.")
+        clean = []
+        for b in value:
+            if not isinstance(b, dict):
+                raise serializers.ValidationError("Bannière invalide.")
+            link = str(b.get("link", "")).strip()[:300]
+            image = str(b.get("image", "")).strip()[:300]
+            if link and not (link.startswith("/") and not link.startswith("//") or link.startswith("https://")):
+                raise serializers.ValidationError("Lien : adresse du site (/…) ou https:// uniquement.")
+            if image and not (image.startswith("/media/") or image.startswith("https://")):
+                raise serializers.ValidationError("Image invalide.")
+            if not (b.get("title") or image):
+                raise serializers.ValidationError("Chaque bannière a besoin d'un titre ou d'une image.")
+            clean.append({
+                "position": b.get("position") if b.get("position") in ("debut", "milieu", "fin") else "fin",
+                "image": image, "link": link,
+                "title": str(b.get("title", "")).strip()[:120], "text": str(b.get("text", "")).strip()[:240],
+                "cta": str(b.get("cta", "")).strip()[:40],
+            })
+        return clean
 
     def _tags(self, post, names):
         from django.utils.text import slugify

@@ -85,9 +85,9 @@ function Builder({ form, switcher }: { form: any; switcher: React.ReactNode }) {
 
   return (
     <div className="-mx-4 -my-5 grid min-h-[calc(100vh-0px)] md:-mx-9 md:-my-8 lg:grid-cols-[200px_1fr_300px]">
-      <aside className="border-r border-line px-4 py-6 text-[13px]">
+      <aside className="border-r border-line px-4 py-6 text-[14px]">
         <Link to="/admin/formulaires" className="text-xs text-muted">← Formulaires</Link>
-        <div className="mt-4 mb-2 text-[11px] font-semibold tracking-[.1em] text-faint">CHAMPS</div>
+        <div className="mt-4 mb-2 text-[12px] font-semibold tracking-[.1em] text-faint">CHAMPS</div>
         <div className="flex flex-wrap gap-2 lg:flex-col">
           {PALETTE.map(([type, label, icon]) => (
             <button key={type} draggable onDragStart={(e) => e.dataTransfer.setData('text/x-type', type)} onClick={() => add(type)}
@@ -127,16 +127,16 @@ function Builder({ form, switcher }: { form: any; switcher: React.ReactNode }) {
           </li>
           <li onDragOver={(e) => { e.preventDefault(); setOverDrop(true) }} onDragLeave={() => setOverDrop(false)}
             onDrop={(e) => { e.preventDefault(); setOverDrop(false); const t = e.dataTransfer.getData('text/x-type'); if (t) add(t) }}
-            className={`rounded-xl border-2 border-dashed p-4 text-center text-[13px] text-muted ${overDrop ? 'border-blue bg-blue-tint' : 'border-[#C9D2E0]'}`}>
+            className={`rounded-xl border-2 border-dashed p-4 text-center text-[14px] text-muted ${overDrop ? 'border-blue bg-blue-tint' : 'border-[#C9D2E0]'}`}>
             + Glisser un champ ici
           </li>
-          <li className="flex items-center gap-2.5 rounded-xl bg-[var(--card)] px-4 py-3.5 text-[13px]">
-            <span className="grid h-[18px] w-[18px] place-items-center rounded-[5px] bg-ok text-[11px] text-white"><Icon name="check" /></span>Protection anti-robot activée
+          <li className="flex items-center gap-2.5 rounded-xl bg-[var(--card)] px-4 py-3.5 text-[14px]">
+            <span className="grid h-[18px] w-[18px] place-items-center rounded-[5px] bg-ok text-[12px] text-white"><Icon name="check" /></span>Protection anti-robot activée
           </li>
         </ol>
       </div>
 
-      <aside className="flex flex-col gap-3 bg-[var(--card)] px-5 py-6 text-[13px]">
+      <aside className="flex flex-col gap-3 bg-[var(--card)] px-5 py-6 text-[14px]">
         {f ? (
           <>
             <div className="flex items-center"><b className="flex-1 text-base">Propriétés</b><button className="text-xs text-muted" onClick={() => setSel(null)}>Réglages du formulaire</button></div>

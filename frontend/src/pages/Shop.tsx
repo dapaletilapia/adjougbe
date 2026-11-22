@@ -42,23 +42,23 @@ export default function Shop() {
           const free = w.access_mode !== 'paid'
           return (
             <article key={w.id} className="card relative flex gap-5 p-5">
-              {free && <span className="absolute top-4 right-4 rounded-md bg-orange px-2.5 py-1 text-[11px] font-semibold text-white">Offerte</span>}
-              <Link to={`/livres/${w.slug}`} className="block w-[130px] shrink-0 md:w-[150px]"><WorkCover work={w} /></Link>
+              <Link to={`/livres/${w.slug}`} className="block w-[110px] shrink-0 sm:w-[130px] md:w-[140px]"><WorkCover work={w} /></Link>
               <div className="flex min-w-0 flex-1 flex-col">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                  {free && <span className="rounded-md bg-orange px-2.5 py-1 text-[12px] font-semibold text-white">Offerte</span>}
                   <span className="chip">{free ? 'Contre un formulaire' : `${w.sections_count} ${w.unit_label}s`}</span>
                   {w.rating?.average && <span><span className="text-orange">★</span> {String(w.rating.average).replace('.', ',')}</span>}
                 </div>
                 <h2 className="mt-2.5 text-lg leading-snug"><Link to={`/livres/${w.slug}`}>{w.title}</Link></h2>
-                <p className="mt-1.5 line-clamp-3 text-[13.5px] leading-relaxed text-muted">{w.subtitle || w.summary}</p>
+                <p className="mt-1.5 line-clamp-3 text-[14.5px] leading-relaxed text-muted">{w.subtitle || w.summary}</p>
                 <p className="mt-auto pt-3 text-lg font-bold">
                   {free ? 'Gratuit' : <>{w.is_promo_active && <s className="mr-2 text-sm font-normal text-faint">{fcfa(w.price_xof)}</s>}{fcfa(w.current_price_xof)}</>}
                 </p>
-                <div className="mt-3 flex gap-2">
-                  <Link to={`/lire/${w.slug}`} className="btn btn-ghost btn-sm flex-1">{w.owned ? 'Lire' : 'Extrait'}</Link>
-                  {w.owned ? <span className="chip chip-ok flex-1 justify-center">Dans ma bibliothèque</span>
-                    : free ? <Link to={`/livres/${w.slug}`} className="btn btn-primary btn-sm flex-1">Recevoir</Link>
-                      : <button className="btn btn-primary btn-sm flex-1" onClick={() => buy('work', w, w.current_price_xof)}>Acheter</button>}
+                <div className="mt-3 flex flex-wrap gap-2 [&>*]:min-w-[104px] [&>*]:flex-1">
+                  <Link to={`/lire/${w.slug}`} className="btn btn-ghost btn-sm">{w.owned ? 'Lire' : 'Extrait'}</Link>
+                  {w.owned ? <span className="chip chip-ok justify-center">Dans ma bibliothèque</span>
+                    : free ? <Link to={`/livres/${w.slug}`} className="btn btn-primary btn-sm">Recevoir</Link>
+                      : <button className="btn btn-primary btn-sm" onClick={() => buy('work', w, w.current_price_xof)}>Acheter</button>}
                 </div>
               </div>
             </article>

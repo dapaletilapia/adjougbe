@@ -114,14 +114,14 @@ export function UserDetail() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Achats">
           {u.accesses.length === 0 ? <p className="text-sm text-muted">Aucune œuvre.</p> : (
-            <ul className="grid gap-2 text-[13px]">{u.accesses.map((a: any) => (
+            <ul className="grid gap-2 text-[14px]">{u.accesses.map((a: any) => (
               <li key={a.id} className="flex items-center gap-2 rounded-lg bg-paper px-3 py-2"><b className="flex-1">{a.work}</b><span className="text-muted">{shortDate(a.granted_at)} · {a.source}</span></li>
             ))}</ul>
           )}
         </Panel>
         <Panel title={`Appareils (${u.devices.length}/2)`}>
           {u.devices.length === 0 ? <p className="text-sm text-muted">Aucune session ouverte.</p> : (
-            <ul className="grid gap-2 text-[13px]">{u.devices.map((d: any, i: number) => (
+            <ul className="grid gap-2 text-[14px]">{u.devices.map((d: any, i: number) => (
               <li key={d.id} className="flex items-center gap-2 rounded-lg bg-paper px-3 py-2">
                 <span className="flex-1"><b>{d.label}</b>{i === 0 && <span className="ml-2 text-ok">● actif</span>}<span className="block text-xs text-muted">{d.ip_address} · {dateTime(d.last_seen_at)}</span></span>
                 <button className="text-xs font-semibold text-danger" onClick={() => act(() => post(`/api/backoffice/users/${u.id}/devices/${d.id}/close/`), 'Session fermée.')}>Déconnecter</button>

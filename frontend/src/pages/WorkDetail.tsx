@@ -48,7 +48,7 @@ export default function WorkDetail() {
   return (
     <div className="bg-[var(--card)]">
       <div className="container-x pt-8">
-        <nav className="text-[13px] text-muted" aria-label="Fil d'Ariane"><Link to="/">Accueil</Link> / <Link to="/boutique">Œuvres</Link> / <span aria-current="page" className="text-ink">{w.title}</span></nav>
+        <nav className="text-[14px] text-muted" aria-label="Fil d'Ariane"><Link to="/">Accueil</Link> / <Link to="/boutique">Œuvres</Link> / <span aria-current="page" className="text-ink">{w.title}</span></nav>
         <div className="mt-8 grid gap-12 md:grid-cols-[minmax(220px,300px)_1fr] lg:gap-16">
           <div className="mx-auto w-full max-w-[300px] md:sticky md:top-32 md:self-start"><WorkCover work={w} /></div>
           <div className="grid content-start gap-5">
@@ -132,7 +132,7 @@ export default function WorkDetail() {
       {/* Barre d'achat collante en mobile (maquette 16f) */}
       {!free && !w.owned && (
         <div className="fixed inset-x-0 bottom-[84px] z-30 flex items-center gap-3.5 bg-[var(--card)] px-5 py-3 shadow-[0_-10px_30px_-14px_rgba(4,28,92,.3)] md:hidden">
-          <div><div className="text-[11px] text-muted">Prix</div><b className="text-xl">{w.current_price_xof.toLocaleString('fr-FR')} F</b></div>
+          <div><div className="text-[12px] text-muted">Prix</div><b className="text-xl">{w.current_price_xof.toLocaleString('fr-FR')} F</b></div>
           <button className="btn btn-primary flex-1" onClick={buyNow}>Acheter</button>
         </div>
       )}

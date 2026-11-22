@@ -27,11 +27,11 @@ export function WorksList() {
                   <span className={`chip ${tone} self-start`}>{lbl}</span>
                   <Link to={`/admin/oeuvres/${w.id}`} className="mt-2 text-[15px] leading-snug font-bold">{w.title}</Link>
                   <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-lg bg-paper py-2"><dd className="text-sm font-bold">{free ? '0 F' : `${(w.promo_price_xof ?? w.price_xof).toLocaleString('fr-FR')} F`}</dd><dt className="text-[11px] text-muted">Prix</dt></div>
-                    <div className="rounded-lg bg-paper py-2"><dd className="text-sm font-bold">{free ? w.readers_count : w.sales_count}</dd><dt className="text-[11px] text-muted">{free ? 'Lecteurs' : 'Ventes'}</dt></div>
-                    <div className="rounded-lg bg-paper py-2"><dd className="text-sm font-bold">{w.sections_count}</dd><dt className="text-[11px] text-muted">{w.kind === 'punchlines' ? 'Séries' : 'Histoires'}</dt></div>
+                    <div className="rounded-lg bg-paper py-2"><dd className="text-sm font-bold">{free ? '0 F' : `${(w.promo_price_xof ?? w.price_xof).toLocaleString('fr-FR')} F`}</dd><dt className="text-[12px] text-muted">Prix</dt></div>
+                    <div className="rounded-lg bg-paper py-2"><dd className="text-sm font-bold">{free ? w.readers_count : w.sales_count}</dd><dt className="text-[12px] text-muted">{free ? 'Lecteurs' : 'Ventes'}</dt></div>
+                    <div className="rounded-lg bg-paper py-2"><dd className="text-sm font-bold">{w.sections_count}</dd><dt className="text-[12px] text-muted">{w.kind === 'punchlines' ? 'Séries' : 'Histoires'}</dt></div>
                   </dl>
-                  <div className="mt-auto flex gap-2 pt-3 text-[13px]">
+                  <div className="mt-auto flex gap-2 pt-3 text-[14px]">
                     <Link to={`/admin/oeuvres/${w.id}`} className="btn btn-blue btn-sm flex-1">Modifier</Link>
                     <a href={`/livres/${w.slug}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm flex-1">Aperçu</a>
                   </div>
@@ -57,7 +57,7 @@ function BundlesAndPromos() {
           <span className="grid h-12 w-12 place-items-center rounded-xl bg-orange text-xl font-bold">%</span>
           <div className="flex-1">
             <b className="text-[15px]">{b.title} {!b.is_active && <span className="chip ml-2">Inactif</span>}</b>
-            <div className="text-[13px] opacity-80">{fcfa(b.price_xof)} au lieu de {b.full_price_xof.toLocaleString('fr-FR')}</div>
+            <div className="text-[14px] opacity-80">{fcfa(b.price_xof)} au lieu de {b.full_price_xof.toLocaleString('fr-FR')}</div>
           </div>
           <button className="btn btn-sm bg-white text-blue-dark" onClick={() => setEditing(b)}>Gérer le pack</button>
         </div>
@@ -233,7 +233,7 @@ function Sections({ work, onChanged }: { work: any; onChanged: () => void }) {
         className={`flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed px-6 py-8 text-center transition-colors ${over ? 'border-blue bg-blue-tint' : 'border-[#C9D2E0] bg-[var(--card)]'}`}>
         <Icon name="cloud-upload-alt" className="text-3xl text-blue" />
         <span className="font-semibold">Glissez un fichier structuré <span className="text-muted">.docx, .xlsx, .md ou .txt</span></span>
-        <span className="text-[13px] text-muted">Découpage automatique par {unit.toLowerCase()} · aperçu avant l'import</span>
+        <span className="text-[14px] text-muted">Découpage automatique par {unit.toLowerCase()} · aperçu avant l'import</span>
         <input type="file" accept=".docx,.xlsx,.txt,.md" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setDropped(f); setImporting(true) } }} />
       </label>
       <div><button className="text-sm font-semibold text-blue" onClick={() => open({ work: work.id, number: next, title: '', preview: '' })}>+ Ajouter une {unit.toLowerCase()} à la main</button></div>

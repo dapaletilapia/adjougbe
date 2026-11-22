@@ -19,7 +19,7 @@ function DateBadge({ iso, big = false }: { iso: string; big?: boolean }) {
   return (
     <span className={`grid place-content-center rounded-xl bg-white text-center text-ink shadow-[0_10px_20px_-10px_rgba(4,28,92,.5)] ${big ? 'h-16 w-16' : 'h-14 w-14'}`}>
       <b className="text-xl leading-none">{d.getDate()}</b>
-      <span className="text-[10px] font-semibold text-orange uppercase">{d.toLocaleDateString('fr-FR', { month: 'short' })}</span>
+      <span className="text-[12px] font-semibold text-orange uppercase">{d.toLocaleDateString('fr-FR', { month: 'short' })}</span>
     </span>
   )
 }
@@ -112,27 +112,40 @@ export function TrainingDetail() {
               ))}
             </dl>
           )}
-          {t.objectives?.length > 0 && (
-            <section>
-              <div className="kicker">Objectifs</div>
-              <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                {t.objectives.map((o: string, i: number) => (
-                  <li key={i} className="flex items-start gap-3 rounded-xl bg-paper p-4"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-ok text-xs text-white"><Icon name="check" /></span>{o}</li>
-                ))}
-              </ul>
+          {(t.objectives?.length > 0 || t.audience) && (
+            <section className="card grid overflow-hidden md:grid-cols-[1.35fr_1fr]">
+              {t.objectives?.length > 0 && (
+                <div className="p-6 sm:p-8">
+                  <h2 className="text-xl">Ce que vous saurez faire</h2>
+                  <ul className="mt-5 grid gap-3.5">
+                    {t.objectives.map((o: string, i: number) => (
+                      <li key={i} className="flex items-start gap-3.5 text-[15px] leading-snug">
+                        <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-orange-tint text-[13px] text-orange"><Icon name="check" /></span>
+                        <span className="pt-0.5 font-medium">{o}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {t.audience && (
+                <div className="card-navy relative flex flex-col justify-center gap-3 p-6 text-white sm:p-8">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/12 text-lg"><Icon name="users" /></span>
+                  <h2 className="text-xl text-white">Pour qui ?</h2>
+                  <p className="leading-relaxed text-white/85">{t.audience}</p>
+                </div>
+              )}
             </section>
           )}
-          {t.audience && <section><div className="kicker">Pour qui ?</div><p className="mt-3 text-ink-soft">{t.audience}</p></section>}
           {t.program?.length > 0 && (
             <section>
-              <div className="kicker">Programme</div>
-              <ol className="relative mt-5 grid gap-6 pl-8">
-                <span className="absolute top-2 bottom-2 left-[9px] w-0.5" style={{ background: 'linear-gradient(180deg,#1560DC,#E6F0FA)' }} />
+              <h2 className="text-2xl">Le déroulé</h2>
+              <ol className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {t.program.map((m: any, i: number) => (
-                  <li key={i} className="relative">
-                    <span className="absolute top-1 -left-8 h-[18px] w-[18px] rounded-full border-4 border-[var(--card)] bg-orange shadow-[0_0_0_2px_#FFEDE4]" />
-                    <b className="text-[15px]">{m.title}</b>
-                    {m.detail && <p className="text-sm text-muted">{m.detail}</p>}
+                  <li key={i} className="card relative flex flex-col gap-2 overflow-hidden p-6">
+                    <span className="absolute inset-x-0 top-0 h-1" style={{ background: 'linear-gradient(90deg,#1560DC,#3FA2FF)' }} />
+                    <span className="text-[13px] font-semibold text-blue">Étape {i + 1}</span>
+                    <b className="text-[17px] leading-snug">{m.title}</b>
+                    {m.detail && <p className="text-[15px] leading-relaxed text-muted">{m.detail}</p>}
                   </li>
                 ))}
               </ol>
@@ -144,10 +157,19 @@ export function TrainingDetail() {
             </section>
           )}
           {t.faq?.length > 0 && (
-            <section><div className="kicker">Questions fréquentes</div>
-              {t.faq.map((f: any, i: number) => (
-                <details key={i} className="border-b border-line py-4"><summary className="cursor-pointer font-semibold">{f.q}</summary><p className="mt-2 text-muted">{f.a}</p></details>
-              ))}
+            <section>
+              <h2 className="text-2xl">Questions fréquentes</h2>
+              <div className="mt-5 grid gap-3">
+                {t.faq.map((f: any, i: number) => (
+                  <details key={i} className="card group p-0 [&_summary::-webkit-details-marker]:hidden">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-[16px] font-semibold">
+                      {f.q}
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-tint text-blue transition-transform group-open:rotate-45"><Icon name="plus" /></span>
+                    </summary>
+                    <p className="px-6 pb-5 leading-relaxed text-muted">{f.a}</p>
+                  </details>
+                ))}
+              </div>
             </section>
           )}
         </div>
@@ -182,7 +204,7 @@ export function TrainingDetail() {
             </div>
           </div>
           <div className="card flex items-center gap-3 p-4">
-            <img src="/mark-color.svg" alt="" className="h-12 w-12 rounded-full bg-paper p-1.5" />
+            <img src="/auteur-hero.webp" alt="" className="h-12 w-12 rounded-full bg-blue-tint object-cover object-top" />
             <span><span className="block text-xs text-muted">Formateur</span><b>{t.trainer}</b></span>
           </div>
         </aside>
@@ -233,7 +255,7 @@ export function TrainingEnroll() {
             return (
               <li key={l} aria-current={active ? 'step' : undefined}>
                 <div className="h-1.5 rounded-full" style={{ background: done ? '#2F68B7' : active ? 'linear-gradient(90deg,#FF6B29 50%,#D9DBE0 50%)' : '#D9DBE0' }} />
-                <div className={`mt-2 text-[13px] ${done ? 'font-semibold text-blue' : active ? 'font-semibold' : 'text-faint'}`}>{done ? '✓' : `${n} ·`} {l}</div>
+                <div className={`mt-2 text-[14px] ${done ? 'font-semibold text-blue' : active ? 'font-semibold' : 'text-faint'}`}>{done ? '✓' : `${n} ·`} {l}</div>
               </li>
             )
           })}

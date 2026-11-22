@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ShareButtons } from '../components/Share'
+import { PunchlinePopup } from '../components/PunchlinePopup'
 import { Icon, Spinner, Stars, WorkCover } from '../components/ui'
 import { useCart } from '../lib/cart'
 import { dateFr, fcfa } from '../lib/format'
@@ -60,12 +61,7 @@ export default function Home() {
             <h1 className="mt-5 text-[40px] leading-[1.1] font-bold tracking-[-0.02em] [text-shadow:0_10px_40px_rgba(4,28,92,.45)] md:text-[60px]">
               Osez diriger,<br />
               <span className="text-orange">écrivez votre{' '}
-                <span className="relative inline-block">réussite.
-                  <svg viewBox="0 0 250 22" fill="none" className="absolute -bottom-3.5 -left-1 w-[110%]" aria-hidden="true">
-                    <path d="M3 15C60 6 150 3 247 10" stroke="#fff" strokeWidth="4" strokeLinecap="round" opacity=".9" />
-                    <path d="M30 19C90 13 160 12 220 15" stroke="#FF6B29" strokeWidth="2.5" strokeLinecap="round" opacity=".8" />
-                  </svg>
-                </span>
+                réussite.
               </span>
             </h1>
             <p className="mt-6 max-w-[500px] text-[17px] leading-[1.65] text-white/90 md:text-lg">
@@ -81,7 +77,7 @@ export default function Home() {
             </div>
             {/* Preuve sociale affichée seulement quand elle est significative. */}
             {((st.rating && st.reviews >= 3) || st.readers >= 50) && (
-              <div className="mt-10 flex items-center gap-3.5 text-[13px]">
+              <div className="mt-10 flex items-center gap-3.5 text-[14px]">
                 {st.rating && st.reviews >= 3 && <span className="tracking-[2px] text-orange">★★★★★</span>}
                 <span>{st.rating && st.reviews >= 3 && <><b>{String(st.rating).replace('.', ',')}/5</b> · </>}{st.readers >= 50 && <>{nf.format(st.readers)} lecteurs</>}</span>
               </div>
@@ -111,6 +107,7 @@ export default function Home() {
         </div>
       </section>
 
+      {p && <PunchlinePopup p={p} />}
       {/* Punchline du jour (cahier des charges : bloc d'accueil) */}
       {p && (
         <section className="container-x mt-20">
@@ -151,7 +148,7 @@ export default function Home() {
             </Link>
           </div>
           <h3 className="mt-2 text-[17px] font-semibold">{cur.title}</h3>
-          <p className="mt-0.5 text-[13px] text-muted">par Adjougbe · {cur.access_mode === 'paid' ? fcfa(cur.current_price_xof) : 'Offert'}</p>
+          <p className="mt-0.5 text-[14px] text-muted">par Adjougbe · {cur.access_mode === 'paid' ? fcfa(cur.current_price_xof) : 'Offert'}</p>
           {cur.rating?.average && <div className="mt-2 flex justify-center"><Stars value={cur.rating.average} /></div>}
           <div className="mt-5 flex justify-center gap-2.5">
             {cur.owned ? <Link to={`/lire/${cur.slug}`} className="btn btn-blue btn-pill btn-sm !px-5">Continuer la lecture</Link>
@@ -189,7 +186,7 @@ export default function Home() {
               <p className="mt-2.5 max-w-[440px] text-base opacity-85">{data.bundle.description || 'Les deux tomes en une seule commande, lecture en ligne protégée.'}</p>
               <div className="mt-5 flex w-max max-w-full items-center gap-3 rounded-xl bg-white px-4 py-3 text-ink shadow-[0_16px_30px_-16px_rgba(14,15,19,.5)]">
                 <span className="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-orange-tint text-orange"><Icon name="check" /></span>
-                <div><div className="text-[13px] font-semibold">Paiement reçu · accès débloqué</div><div className="text-xs text-muted">L'œuvre est dans votre bibliothèque en moins d'une minute</div></div>
+                <div><div className="text-[14px] font-semibold">Paiement reçu · accès débloqué</div><div className="text-xs text-muted">L'œuvre est dans votre bibliothèque en moins d'une minute</div></div>
               </div>
             </div>
             <div className="relative md:text-right">

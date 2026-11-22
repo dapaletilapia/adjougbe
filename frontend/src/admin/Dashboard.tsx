@@ -68,7 +68,7 @@ export default function Dashboard() {
                 <div className="flex h-3.5 overflow-hidden rounded-full">
                   {d.by_method.map((m: any) => <span key={m.payment_method} style={{ width: `${(m.total / totalPm) * 100}%`, background: PM_COLORS[m.payment_method] ?? '#9A9DA6' }} />)}
                 </div>
-                <ul className="mt-3 grid gap-2.5 text-[13px]">
+                <ul className="mt-3 grid gap-2.5 text-[14px]">
                   {d.by_method.map((m: any) => (
                     <li key={m.payment_method} className="flex items-center gap-2.5">
                       <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: PM_COLORS[m.payment_method] ?? '#9A9DA6' }} />
@@ -85,7 +85,7 @@ export default function Dashboard() {
 
       <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
         {finance ? (
-          <Panel title="Dernières commandes" action={<Link to="/admin/commandes" className="text-[13px] font-semibold text-blue">Tout voir</Link>}>
+          <Panel title="Dernières commandes" action={<Link to="/admin/commandes" className="text-[14px] font-semibold text-blue">Tout voir</Link>}>
             <div className="overflow-x-auto">
               <table className="table">
                 <thead><tr><th>N°</th><th>Client</th><th>Article</th><th>Montant</th><th>Statut</th></tr></thead>
@@ -112,7 +112,7 @@ export default function Dashboard() {
             <section className="card border-[1.5px] border-[#FDBA9B] p-5">
               <div className="text-xs font-semibold tracking-[.08em] text-[#C2410C] uppercase">⚠ Alerte lecture</div>
               <b className="mt-2 block text-[15px]">{alert.user_email}</b>
-              <div className="text-[13px] text-muted">{alert.kind_label} · {alert.detail}</div>
+              <div className="text-[14px] text-muted">{alert.kind_label} · {alert.detail}</div>
               <div className="mt-3 flex gap-2">
                 <Link to={`/admin/utilisateurs/${alert.user_id}`} className="btn btn-blue btn-sm">Voir le journal</Link>
                 <button className="btn btn-ghost btn-sm" onClick={async () => {

@@ -7,6 +7,7 @@ import { useApi } from '../lib/hooks'
 import { useToast } from '../lib/toast'
 import { AdminPage, Confirm, FilterSelect, ListToolbar, Pager, Pills, StatusChip, TableWrap, Tabs, toFormData, useEditor, useList } from './kit'
 import { RichEditor } from './RichEditor'
+import { ArticleBanner, BANNER_POSITIONS, type Banner } from '../components/ArticleBanner'
 
 const KINDS: [string, string][] = [['punchline', 'Punchline du jour'], ['papo', 'Papo de Tiékar'], ['article', 'Article'], ['media', 'Vidéo / audio'], ['event', 'Annonce / événement']]
 
@@ -100,9 +101,9 @@ function CommentQueue() {
         {items.map((c: any) => {
           const spam = SPAM.test(c.body)
           return (
-            <li key={c.id} className={`rounded-xl p-3.5 text-[13px] ${spam ? 'bg-[#FFF4EF]' : 'bg-paper'}`}>
+            <li key={c.id} className={`rounded-xl p-3.5 text-[14px] ${spam ? 'bg-[#FFF4EF]' : 'bg-paper'}`}>
               <div className="flex gap-2.5">
-                <span className="avatar h-8 w-8 text-[11px]">{initials(c.author)}</span>
+                <span className="avatar h-8 w-8 text-[12px]">{initials(c.author)}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-muted"><b className="text-ink">{c.author}</b> · sur « {c.post_title} »</p>
                   <p className="mt-1 leading-relaxed">{c.body}</p>
@@ -123,7 +124,7 @@ function CommentQueue() {
           )
         })}
       </ul>
-      <Link to="/admin/moderation" className="mt-3 block text-[13px] font-semibold text-blue">Historique de modération</Link>
+      <Link to="/admin/moderation" className="mt-3 block text-[14px] font-semibold text-blue">Historique de modération</Link>
     </section>
   )
 }
@@ -208,7 +209,7 @@ export function PostEdit() {
   const isNew = id === 'nouveau'
   const { data, loading } = useApi(isNew ? null : `/api/backoffice/posts/${id}/`)
   if (!isNew && (loading || !data)) return <Spinner />
-  const p = isNew ? { title: '', kind: 'punchline', excerpt: '', body: '', quote: '', media_url: '', category: null, tags: [], status: 'draft', published_at: new Date().toISOString(), members_only: false, allow_comments: true, seo_description: '' } : data
+  const p = isNew ? { title: '', kind: 'punchline', excerpt: '', body: '', quote: '', media_url: '', banners: [], category: null, tags: [], status: 'draft', published_at: new Date().toISOString(), members_only: false, allow_comments: true, seo_description: '' } : data
   return <PostForm key={p.id ?? 'new'} post={p} />
 }
 
@@ -223,7 +224,7 @@ function PostForm({ post: p }: { post: any }) {
     const body: any = {
       title: v.kind === 'punchline' && !v.title ? `Punchline du ${new Date(v.published_at).toLocaleDateString('fr-FR')}` : v.title,
       kind: v.kind, excerpt: v.excerpt || (v.kind === 'punchline' ? v.quote.slice(0, 300) : ''), body: v.body, quote: v.quote,
-      media_url: v.media_url, category_id: v.category_id, status: status ?? v.status, published_at: v.published_at,
+      media_url: v.media_url, banners: v.banners ?? [], category_id: v.category_id, status: status ?? v.status, published_at: v.published_at,
       members_only: v.members_only, allow_comments: v.allow_comments, seo_description: v.seo_description,
       tag_names: v.tag_names.split(',').map((t: string) => t.trim()).filter(Boolean),
     }
@@ -256,6 +257,7 @@ function PostForm({ post: p }: { post: any }) {
               <Field label="Chapeau (affiché dans les listes)"><textarea className="input" rows={2} maxLength={300} value={v.excerpt} onChange={(e) => ed.set('excerpt', e.target.value)} /></Field>
               {v.kind === 'media' && <Field label="Lien de la vidéo ou du fichier audio"><input className="input" type="url" value={v.media_url} onChange={(e) => ed.set('media_url', e.target.value)} /></Field>}
               <RichEditor value={v.body} onChange={(html) => ed.set('body', html)} />
+              <BannersEditor value={v.banners ?? []} onChange={(b) => ed.set('banners', b)} />
             </>
           )}
           <ErrorNote error={ed.err} />
@@ -270,7 +272,7 @@ function PostForm({ post: p }: { post: any }) {
             </select>
           </Field>
           <Field label="Étiquettes" hint="Séparées par des virgules."><input className="input" value={v.tag_names} onChange={(e) => ed.set('tag_names', e.target.value)} /></Field>
-          {v.kind !== 'punchline' && <Field label="Image de couverture"><input type="file" accept="image/*" className="input" onChange={(e) => setCover(e.target.files?.[0] ?? null)} /></Field>}
+          {v.kind !== 'punchline' && <Field label="Image d'en-tête" hint="Grande image en haut de l'article et dans les listes (1600 × 900 px conseillé)."><input type="file" accept="image/*" className="input" onChange={(e) => setCover(e.target.files?.[0] ?? null)} /></Field>}
           {v.cover && !cover && <img src={v.cover} alt="" className="rounded-lg" />}
           <label className="flex items-center gap-2"><input type="checkbox" className="accent-orange" checked={v.members_only} onChange={(e) => ed.set('members_only', e.target.checked)} /> Réservé aux membres</label>
           <Field label="Description pour Google"><input className="input" maxLength={160} value={v.seo_description} onChange={(e) => ed.set('seo_description', e.target.value)} /></Field>
@@ -384,5 +386,60 @@ function ReviewsModeration() {
         </table>
       </TableWrap>
     </>
+  )
+}
+
+
+const EMPTY_BANNER: Banner = { position: 'fin', image: '', title: '', text: '', cta: '', link: '' }
+
+/** Bannières de l'article : promouvoir une œuvre, une formation ou un événement au fil du texte. */
+function BannersEditor({ value, onChange }: { value: Banner[]; onChange: (b: Banner[]) => void }) {
+  const toast = useToast()
+  const [busy, setBusy] = useState<number | null>(null)
+  const set = (i: number, k: keyof Banner, x: string) => onChange(value.map((b, j) => (j === i ? { ...b, [k]: x } : b)))
+  const move = (i: number, d: number) => { const n = [...value]; [n[i], n[i + d]] = [n[i + d], n[i]]; onChange(n) }
+  const upload = async (i: number, f?: File) => {
+    if (!f) return
+    setBusy(i)
+    try {
+      const r = await api('/api/backoffice/media/', { method: 'POST', body: toFormData({ file: f }) })
+      set(i, 'image', r.url)
+    } catch (e) { toast((e as Error).message) } finally { setBusy(null) }
+  }
+  return (
+    <section className="grid gap-4 rounded-2xl border border-line p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><b className="block">Bannières</b><span className="text-sm text-muted">Mettez en avant une œuvre, une formation ou un événement dans l'article (4 maximum).</span></div>
+        {value.length < 4 && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onChange([...value, { ...EMPTY_BANNER }])}><Icon name="plus" /> Ajouter une bannière</button>}
+      </div>
+      {value.map((b, i) => (
+        <div key={i} className="grid gap-4 rounded-xl bg-paper p-4 lg:grid-cols-[1fr_1fr]">
+          <div className="grid content-start gap-3">
+            <div className="flex items-center gap-2">
+              <select className="input" aria-label="Emplacement" value={b.position} onChange={(e) => set(i, 'position', e.target.value)}>
+                {BANNER_POSITIONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </select>
+              <button type="button" className="btn btn-ghost btn-sm" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Monter">↑</button>
+              <button type="button" className="btn btn-ghost btn-sm" disabled={i === value.length - 1} onClick={() => move(i, 1)} aria-label="Descendre">↓</button>
+              <Confirm text="Retirer cette bannière ?" danger onConfirm={() => onChange(value.filter((_, j) => j !== i))}><button type="button" className="btn btn-ghost btn-sm text-danger" aria-label="Retirer">✕</button></Confirm>
+            </div>
+            <Field label="Image" hint="Facultative. Seule, elle s'affiche en pleine largeur.">
+              <input type="file" accept="image/*" className="input" disabled={busy === i} onChange={(e) => upload(i, e.target.files?.[0])} />
+            </Field>
+            {b.image && <button type="button" className="link self-start text-sm" onClick={() => set(i, 'image', '')}>Retirer l'image</button>}
+            <Field label="Titre"><input className="input" maxLength={120} value={b.title} onChange={(e) => set(i, 'title', e.target.value)} placeholder="Les Punchlines — Tome 2 est disponible" /></Field>
+            <Field label="Texte"><textarea className="input" rows={2} maxLength={240} value={b.text} onChange={(e) => set(i, 'text', e.target.value)} /></Field>
+            <div className="grid gap-3 sm:grid-cols-[1fr_1.4fr]">
+              <Field label="Bouton"><input className="input" maxLength={40} value={b.cta} onChange={(e) => set(i, 'cta', e.target.value)} placeholder="Lire l'extrait" /></Field>
+              <Field label="Lien" hint="/livres/… ou https://…"><input className="input" value={b.link} onChange={(e) => set(i, 'link', e.target.value)} placeholder="/livres/les-punchlines-tome-2" /></Field>
+            </div>
+          </div>
+          <div className="min-w-0">
+            <span className="text-[13px] font-semibold text-muted">Aperçu</span>
+            {b.title || b.image ? <ArticleBanner b={b} /> : <p className="mt-3 text-sm text-faint">Ajoutez un titre ou une image.</p>}
+          </div>
+        </div>
+      ))}
+    </section>
   )
 }

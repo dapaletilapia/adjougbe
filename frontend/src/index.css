@@ -2,6 +2,11 @@
 
 /* Jetons de la charte (maquettes Claude Design « Adjougbe ») */
 @theme {
+  /* Échelle de texte relevée pour la lecture sur téléphone. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.90625rem;
+  --text-sm--line-height: 1.55;
   --color-ink: #0e0f13;
   --color-ink-soft: #2c2e35;
   --color-muted: #6b6e78;
@@ -56,7 +61,9 @@ html[data-theme="dark"] {
 /* Règles de base dans une couche : sinon elles l'emporteraient sur les utilitaires Tailwind. */
 @layer base {
 html { background: var(--bg); color: var(--fg); }
-body { font-family: var(--font-sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+/* Garde-fou : aucun débordement horizontal de page sur mobile (clip ne casse pas position: sticky). */
+html, body { overflow-x: clip; }
+body { font-family: var(--font-sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 h1, h2, h3, h4 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; }
 .fi { display: inline-flex; line-height: 1; }
@@ -91,30 +98,39 @@ h1, h2, h3, h4 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; }
   .btn-ghost:hover:not(:disabled) { border-color: var(--fg); }
   .btn-danger { background: #ffe4dc; color: var(--color-danger); }
   .btn-danger:hover:not(:disabled) { background: #ffd2c4; }
-  .btn-sm { min-height: 34px; padding: .35rem .8rem; font-size: .85rem; }
+  .btn-sm { min-height: 38px; padding: .4rem .9rem; font-size: .9rem; }
 
   .card { background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
   .card-navy { position: relative; overflow: hidden; color: #fff; background: var(--grad-navy); border-radius: var(--radius-lg); box-shadow: 0 24px 50px -24px rgba(4, 28, 92, .7); }
   .card-orange { color: #fff; background: var(--grad-orange); border-radius: var(--radius-lg); box-shadow: 0 20px 40px -24px rgba(255, 107, 41, .8); }
   .hero-grad { background: radial-gradient(700px 420px at 78% 30%, #3fa2ff 0%, rgba(31,120,240,.55) 38%, transparent 72%), linear-gradient(125deg, #041c5c 0%, #0a3a9e 38%, #1560dc 70%, #2a86f2 100%); }
-  .kicker { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--color-orange); }
+  .kicker { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--color-orange); }
   .btn-pill { border-radius: 999px; }
   .shadow-orange { box-shadow: 0 14px 28px -10px rgba(255,107,41,.9); }
-  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-faint); }
+  .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-faint); }
 
   .field { display: grid; gap: .35rem; }
-  .field > span { font-size: .875rem; font-weight: 500; }
+  .field > span { font-size: .9rem; font-weight: 600; }
   .field small { color: var(--color-muted); font-size: .8rem; }
   .input {
-    width: 100%; min-height: 44px; padding: .55rem .8rem; border-radius: var(--radius-md);
-    border: 1px solid var(--color-line); background: var(--color-mist); color: var(--fg); font: inherit;
+    width: 100%; min-height: 50px; padding: .7rem .95rem; border-radius: 12px;
+    border: 1.5px solid #e3e6ec; background: var(--card); color: var(--fg); font: inherit;
+    transition: border-color .15s, box-shadow .15s;
   }
-  .input:focus { outline: none; border-color: var(--color-blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-blue) 22%, transparent); }
+  .input::placeholder { color: #a3a8b3; }
+  .input:hover { border-color: #cdd2db; }
+  .input:focus { outline: none; border-color: var(--color-blue); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-blue) 16%, transparent); }
+  html[data-theme="dark"] .input { border-color: #2b2f38; }
+  /* Champ avec icône à gauche : <span class="input-icon"><i/>…<input class="input"/></span> */
+  .input-icon { position: relative; display: block; }
+  .input-icon > .fi { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #a3a8b3; pointer-events: none; font-size: 16px; }
+  .input-icon > .input { padding-left: 2.75rem; }
+  .input-icon:focus-within > .fi { color: var(--color-blue); }
   textarea.input { min-height: 110px; resize: vertical; }
   .err { color: var(--color-danger); font-size: .82rem; }
 
   .chip { display: inline-flex; align-items: center; gap: .3rem; padding: 3px 9px; border-radius: var(--radius-sm);
-    font-size: 12px; font-weight: 500; background: #f2f3f5; color: var(--color-ink-soft); white-space: nowrap; }
+    font-size: 13px; font-weight: 500; background: #f2f3f5; color: var(--color-ink-soft); white-space: nowrap; }
   .chip-orange { background: var(--color-orange-tint); color: var(--color-orange-dark); }
   .chip-blue { background: var(--color-blue-tint); color: var(--color-blue); }
   .chip-ok { background: #dcfce7; color: var(--color-ok-dark); }
@@ -133,19 +149,19 @@ h1, h2, h3, h4 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; }
   .prose-adj img { border-radius: var(--radius-md); margin: 1em 0; }
 
   .table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-  .table { font-size: 13px; }
-  .table th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-faint); padding: .6rem .75rem .7rem; border-bottom: 1px solid #eff0f2; white-space: nowrap; }
+  .table { font-size: 14px; }
+  .table th { text-align: left; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-faint); padding: .6rem .75rem .7rem; border-bottom: 1px solid #eff0f2; white-space: nowrap; }
   .table td { padding: .75rem; border-bottom: 1px solid var(--color-mist); vertical-align: middle; }
   .table tbody tr:last-child td { border-bottom: 0; }
   .table tbody tr:hover { background: color-mix(in srgb, var(--color-blue-tint) 45%, transparent); }
-  .seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--radius-md); background: var(--card); font-size: 13px; }
+  .seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--radius-md); background: var(--card); font-size: 14px; }
   .seg > button { padding: 8px 14px; border-radius: 8px; }
   .seg > button[aria-selected="true"], .seg > button[aria-pressed="true"] { background: var(--color-blue); color: #fff; font-weight: 600; }
   .toggle { position: relative; width: 40px; height: 22px; border-radius: 11px; background: #d9dbe0; transition: background .15s; flex: none; }
   .toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; }
   .toggle[aria-checked="true"] { background: var(--color-ok); }
   .toggle[aria-checked="true"]::after { left: 20px; }
-  .avatar { display: grid; place-items: center; flex: none; border-radius: 50%; background: var(--color-blue); color: #fff; font-weight: 600; font-size: 12px; }
+  .avatar { display: grid; place-items: center; flex: none; border-radius: 50%; background: var(--color-blue); color: #fff; font-weight: 600; font-size: 13px; }
 
   .link { color: var(--color-blue); text-decoration: underline; text-underline-offset: 3px; }
 
@@ -158,3 +174,14 @@ h1, h2, h3, h4 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; }
   .no-print, .reader-root { display: none !important; }
   body::after { content: "L'impression est désactivée pour protéger l'œuvre."; }
 }
+
+/* Popup punchline du jour : le livre s'ouvre une fois, à l'apparition. */
+@keyframes pdj-in { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes pdj-open { from { transform: perspective(1400px) rotateY(-75deg); } to { transform: perspective(1400px) rotateY(0); } }
+.pdj-in { animation: pdj-in .45s cubic-bezier(.2,.8,.2,1) both; }
+@media (min-width: 768px) { .pdj-cover { transform-origin: right center; animation: pdj-open .9s .15s cubic-bezier(.2,.8,.2,1) both; } }
+@media (prefers-reduced-motion: reduce) { .pdj-in, .pdj-cover { animation: none !important; } }
+
+/* À propos : premier paragraphe en chapeau, intertitres aérés. */
+.about-prose > p:first-of-type { font-size: 1.2rem; line-height: 1.65; color: var(--fg); }
+.about-prose h3 { margin-top: 2.2rem; }

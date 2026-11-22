@@ -25,7 +25,7 @@ export default function Library() {
     <ClientShell>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div><div className="text-sm text-muted">{greeting()} {user?.full_name.split(' ')[0]}</div><h1 className="mt-1 text-[28px] md:text-[32px]">Ma bibliothèque</h1></div>
-        <Link to="/compte/securite" className="rounded-full bg-[var(--card)] px-4 py-2.5 text-[13px] shadow-[0_10px_20px_-16px_rgba(4,28,92,.5)]">Appareils : <b>{devices.data?.length ?? '…'} / 2</b></Link>
+        <Link to="/compte/securite" className="rounded-full bg-[var(--card)] px-4 py-2.5 text-[14px] shadow-[0_10px_20px_-16px_rgba(4,28,92,.5)]">Appareils : <b>{devices.data?.length ?? '…'} / 2</b></Link>
       </div>
       {loading ? <Spinner /> : !items.length ? (
         <div className="mt-8"><Empty title="Aucun livre pour l'instant" action={<Link to="/boutique" className="btn btn-primary">Découvrir les œuvres</Link>}>Les livres achetés ou offerts apparaissent ici, prêts à lire.</Empty></div>
@@ -42,7 +42,7 @@ export default function Library() {
                 <p className="mt-1 opacity-85">{last.work.unit_label === 'série' ? 'Série' : 'Histoire'} {last.resume.number}{last.resume.title ? ` · ${last.resume.title}` : ''}</p>
                 <div className="mt-4 flex max-w-[460px] items-center gap-3.5">
                   <div className="h-2 flex-1 rounded-full bg-white/20"><div className="h-full rounded-full bg-orange shadow-[0_0_12px_rgba(255,107,41,.8)]" style={{ width: `${last.percent}%` }} /></div>
-                  <span className="text-[13px] font-semibold">{last.sections_read} / {last.sections_total}</span>
+                  <span className="text-[14px] font-semibold">{last.sections_read} / {last.sections_total}</span>
                 </div>
               </div>
               <Link to={`/lire/${last.work.slug}`} className="btn btn-primary relative shadow-orange">Continuer →</Link>
@@ -74,7 +74,7 @@ export default function Library() {
                 <img src="/mark-mono.svg" alt="" className="absolute -right-10 -bottom-10 h-44 w-44 opacity-15" />
                 <div className="relative text-xs font-semibold tracking-[.1em] opacity-90">MA PROCHAINE FORMATION</div>
                 <b className="relative mt-3 text-[19px] leading-snug">{nextTraining.session.training.title}</b>
-                <div className="relative mt-1 text-[13px] opacity-90">{new Date(nextTraining.session.starts_at).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{nextTraining.session.location ? ` · ${nextTraining.session.location.split(',')[0]}` : ''}</div>
+                <div className="relative mt-1 text-[14px] opacity-90">{new Date(nextTraining.session.starts_at).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{nextTraining.session.location ? ` · ${nextTraining.session.location.split(',')[0]}` : ''}</div>
                 <div className="relative mt-auto text-[48px] font-bold">J-{Math.max(0, Math.ceil((+new Date(nextTraining.session.starts_at) - Date.now()) / 864e5))}</div>
               </Link>
             )}

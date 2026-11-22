@@ -81,7 +81,7 @@ export function PaymentReturn() {
     const first = (user?.full_name ?? '').split(' ')[0]
     return (
       <GradientScreen>
-        <span className="inline-flex items-center gap-2 rounded-full border border-[#4ADE80]/40 bg-ok/20 px-4 py-2 text-[13px] font-semibold text-[#86EFAC]">
+        <span className="inline-flex items-center gap-2 rounded-full border border-[#4ADE80]/40 bg-ok/20 px-4 py-2 text-[14px] font-semibold text-[#86EFAC]">
           <span className="h-2 w-2 rounded-full bg-[#4ADE80]" />Paiement confirmé · {order.payment_method_label}
         </span>
         {bought.length > 0 && (
@@ -134,7 +134,7 @@ function PaymentFailed({ order }: { order: any }) {
         </div>
         <button className="btn btn-primary !py-3.5 shadow-orange" onClick={retry} disabled={busy}>Réessayer avec {order.payment_method_label}</button>
         <Link to="/compte/commandes" className="btn btn-ghost !py-3.5">Changer de moyen de paiement</Link>
-        {site.data?.whatsapp_number && <p className="text-center text-[13px] text-muted">Besoin d'aide ? <a href={`https://wa.me/${site.data.whatsapp_number}`} className="font-semibold text-blue">WhatsApp support</a></p>}
+        {site.data?.whatsapp_number && <p className="text-center text-[14px] text-muted">Besoin d'aide ? <a href={`https://wa.me/${site.data.whatsapp_number}`} className="font-semibold text-blue">WhatsApp support</a></p>}
       </div>
     </div>
   )

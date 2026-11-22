@@ -45,9 +45,9 @@ export function PaymentPicker({ value, onChange, enabled }: { value: string; onC
           <button type="button" role="radio" aria-checked={on} key={m.value} onClick={() => onChange(m.value)}
             className="relative flex items-center gap-3 rounded-[14px] bg-[var(--card)] p-3 text-left transition-colors sm:block sm:px-2 sm:py-4 sm:text-center"
             style={on ? { border: `2px solid ${c}`, background: bg } : { border: '1px solid var(--color-line)' }}>
-            {on && <span className="absolute top-2 right-2 hidden h-[18px] w-[18px] place-items-center rounded-full text-[10px] text-white sm:grid" style={{ background: c }}><Icon name="check" /></span>}
+            {on && <span className="absolute top-2 right-2 hidden h-[18px] w-[18px] place-items-center rounded-full text-[12px] text-white sm:grid" style={{ background: c }}><Icon name="check" /></span>}
             <span className="flex justify-center"><PayLogo method={m.value} size={44} /></span>
-            <span className="flex-1 text-sm font-semibold sm:mt-2.5 sm:block sm:text-[13px]">{SHORT[m.value]}</span>
+            <span className="flex-1 text-sm font-semibold sm:mt-2.5 sm:block sm:text-[14px]">{SHORT[m.value]}</span>
             <span className="h-5 w-5 shrink-0 rounded-full sm:hidden" style={on ? { border: `6px solid ${c}` } : { border: '2px solid #D9DBE0' }} aria-hidden="true" />
           </button>
         )
@@ -135,7 +135,7 @@ export function Checkout() {
             <span className="h-14 w-14 shrink-0 animate-spin rounded-full border-4 border-white/20 border-t-orange border-r-orange [animation-duration:2.4s]" aria-hidden="true" />
             <div>
               <b className="text-[17px]">{mm ? 'Vous confirmerez sur votre téléphone' : 'Paiement sécurisé par carte'}</b>
-              <p className="mt-1 text-[13px] leading-relaxed opacity-85">
+              <p className="mt-1 text-[14px] leading-relaxed opacity-85">
                 {mm ? `Après « Payer », validez la notification ${SHORT[method]} sur votre téléphone. L'accès se débloque automatiquement.`
                   : 'Vous serez redirigé vers la page sécurisée de la banque (Visa, Mastercard), puis ramené ici.'}
               </p>
@@ -168,7 +168,7 @@ export function Checkout() {
             <div className="flex">
               {coverWorks.slice(0, 3).map((w: any, i: number) => <div key={`${w.id}-${i}`} className="w-12" style={{ marginLeft: i ? -16 : 0 }}><WorkCover work={w} /></div>)}
             </div>
-            <div className="min-w-0"><b className="block truncate">{cart.items.map((i) => i.label).join(' + ')}</b><span className="text-[13px] text-muted">{cart.items.length} article(s)</span></div>
+            <div className="min-w-0"><b className="block truncate">{cart.items.map((i) => i.label).join(' + ')}</b><span className="text-[14px] text-muted">{cart.items.length} article(s)</span></div>
           </div>
           <div className="flex gap-2">
             <input className="input !min-h-10" placeholder="Code promo" aria-label="Code promo" value={promo} onChange={(e) => setPromo(e.target.value)} />
@@ -249,7 +249,7 @@ export default function Cart() {
                 <div className="flex shrink-0">
                   {(w ? [w] : b?.works ?? []).slice(0, 2).map((x: any, k: number) => <div key={x.id} className="w-[54px] md:w-[70px]" style={{ marginLeft: k ? -22 : 0 }}><WorkCover work={x} /></div>)}
                 </div>
-                <div className="min-w-0 flex-1"><b className="block text-[15px] md:text-[17px]">{i.label}</b><span className="text-[13px] text-muted">Lecture en ligne · accès illimité</span></div>
+                <div className="min-w-0 flex-1"><b className="block text-[15px] md:text-[17px]">{i.label}</b><span className="text-[14px] text-muted">Lecture en ligne · accès illimité</span></div>
                 <b className="text-base md:text-lg">{i.price.toLocaleString('fr-FR')} F</b>
                 <button onClick={() => cart.remove(i.type, i.id)} className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-paper text-faint hover:text-ink" aria-label={`Retirer ${i.label}`}><Icon name="cross-small" /></button>
               </div>
@@ -258,7 +258,7 @@ export default function Cart() {
           {upsell && unitTotal > upsell.price_xof && (
             <div className="hero-grad flex flex-wrap items-center gap-4 rounded-2xl px-5 py-[18px] text-white shadow-[0_20px_40px_-24px_rgba(4,28,92,.7)]">
               <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-orange font-bold">%</span>
-              <div className="min-w-0 flex-1"><b>Passez au pack et économisez {(unitTotal - upsell.price_xof).toLocaleString('fr-FR')} FCFA</b><div className="text-[13px] opacity-85">{upsell.title} en une seule commande.</div></div>
+              <div className="min-w-0 flex-1"><b>Passez au pack et économisez {(unitTotal - upsell.price_xof).toLocaleString('fr-FR')} FCFA</b><div className="text-[14px] opacity-85">{upsell.title} en une seule commande.</div></div>
               <button onClick={toBundle} className="btn btn-sm bg-white text-blue-dark">Convertir en pack</button>
             </div>
           )}
