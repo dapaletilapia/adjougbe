@@ -68,7 +68,14 @@ function titleSize(t: string) {
  */
 export function WorkCover({ work, className = '' }: { work: CoverWork; className?: string; size?: string }) {
   const shell = `relative block aspect-[2/3] w-full overflow-hidden rounded-[3px_8px_8px_3px] shadow-[inset_6px_0_10px_-4px_rgba(0,0,0,.35),0_30px_60px_-20px_rgba(0,0,0,.45)] ${className}`
-  if (work.cover) return <img src={work.cover} alt={`Couverture : ${work.title}`} className={`${shell} object-cover`} />
+  if (work.cover)
+    return (
+      <span className={shell}>
+        <img src={work.cover} alt={`Couverture : ${work.title}`} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+        {/* Dos du livre : pli et reflet sur le bord gauche. */}
+        <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[7%] bg-[linear-gradient(90deg,rgba(0,0,0,.38),rgba(255,255,255,.16)_45%,transparent)]" />
+      </span>
+    )
   const [main, ...rest] = work.title.split(/ — | – /)
   const tome = rest.join(' ')
   const num = tome.match(/\d+/)?.[0]

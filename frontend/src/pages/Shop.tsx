@@ -31,25 +31,36 @@ export default function Shop() {
           search={{ id: 'shop-q', value: q, onChange: setQ, placeholder: 'Rechercher une œuvre' }} />
       </div>
 
-      <section className="container-x mt-10 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
+      <section className="container-x mt-10 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
         {works.loading && <Spinner />}
         {list.map((w) => {
           const free = w.access_mode !== 'paid'
+          const promo = !free && w.is_promo_active && w.price_xof > w.current_price_xof
+          const tint = w.cover_color || '#2F68B7'
           return (
-            <article key={w.id} className="card relative flex gap-5 p-5">
-              <Link to={`/livres/${w.slug}`} className="block w-[110px] shrink-0 sm:w-[130px] md:w-[140px]"><WorkCover work={w} /></Link>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                  {free && <span className="rounded-md bg-orange px-2.5 py-1 text-[12px] font-semibold text-white">Offerte</span>}
-                  <span className="chip">{free ? 'Contre un formulaire' : `${w.sections_count} ${w.unit_label}s`}</span>
+            <article key={w.id} className="card group relative flex flex-col overflow-hidden !p-0">
+              {/* Scène : la couverture posée sur un fond teinté de sa couleur dominante. */}
+              <Link to={`/livres/${w.slug}`} aria-label={w.title} className="relative grid place-items-center overflow-hidden px-8 pt-9 pb-8"
+                style={{ background: `radial-gradient(120% 90% at 50% 100%, color-mix(in srgb, ${tint} 34%, transparent), color-mix(in srgb, ${tint} 10%, transparent) 70%)` }}>
+                <div className="w-[150px] transition-transform duration-300 group-hover:-translate-y-1.5 group-hover:-rotate-1 sm:w-[168px]"><WorkCover work={w} /></div>
+                {free && <span className="absolute top-4 left-4 rounded-full bg-orange px-3 py-1 text-[12.5px] font-semibold text-white">Offerte</span>}
+                {promo && <span className="absolute top-4 left-4 rounded-full bg-orange px-3 py-1 text-[12.5px] font-semibold text-white">−{Math.round(100 - (w.current_price_xof / w.price_xof) * 100)} %</span>}
+              </Link>
+              <div className="flex flex-1 flex-col p-5 pt-4">
+                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
+                  <span>{w.sections_count} {w.unit_label}s</span>
                   {w.rating?.average && <span><span className="text-orange">★</span> {String(w.rating.average).replace('.', ',')}</span>}
-                </div>
-                <h2 className="mt-2.5 text-lg leading-snug"><Link to={`/livres/${w.slug}`}>{w.title}</Link></h2>
-                <p className="mt-1.5 line-clamp-3 text-[14.5px] leading-relaxed text-muted">{w.subtitle || w.summary}</p>
-                <p className="mt-auto pt-3 text-lg font-bold">
-                  {free ? 'Gratuit' : <>{w.is_promo_active && <s className="mr-2 text-sm font-normal text-faint">{fcfa(w.price_xof)}</s>}{fcfa(w.current_price_xof)}</>}
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2 [&>*]:min-w-[104px] [&>*]:flex-1">
+                <h2 className="mt-1.5 text-[19px] leading-snug"><Link to={`/livres/${w.slug}`} className="hover:text-blue">{w.title}</Link></h2>
+                <p className="mt-1 mb-5 line-clamp-2 text-[14.5px] leading-relaxed text-muted">{w.subtitle || w.summary}</p>
+                <div className="mt-auto flex items-baseline justify-between gap-3 border-t border-line pt-4">
+                  <p className="text-[20px] font-bold whitespace-nowrap">
+                    {free ? 'Gratuit' : fcfa(w.current_price_xof)}
+                    {promo && <s className="ml-2 text-[13.5px] font-normal text-faint">{fcfa(w.price_xof)}</s>}
+                  </p>
+                  {free && <span className="text-right text-[12.5px] text-muted">contre un formulaire</span>}
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
                   <Link to={`/lire/${w.slug}`} className="btn btn-ghost btn-sm">{w.owned ? 'Lire' : 'Extrait'}</Link>
                   {w.owned ? <span className="chip chip-ok justify-center">Dans ma bibliothèque</span>
                     : free ? <Link to={`/livres/${w.slug}`} className="btn btn-primary btn-sm">Recevoir</Link>

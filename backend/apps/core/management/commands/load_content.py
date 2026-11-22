@@ -8,6 +8,7 @@ import re
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -16,6 +17,10 @@ from apps.catalog.models import Work
 from apps.core import content_fr as C
 from apps.core.models import SiteSettings
 from apps.trainings.models import Training
+
+COVERS_DIR = Path(__file__).resolve().parents[3] / "catalog" / "covers"
+# Couleur dominante de chaque couverture : elle teinte le fond de la carte de l'œuvre.
+COVERS = {"les-punchlines-tome-1": "#7A4A1F", "les-punchlines-tome-2": "#1B2D4F", "les-papos-de-tiekar": "#9C3B1E"}
 
 DEMO_MARKERS = ("à rédiger", "à compléter", "démonstration", "biographie à compléter")
 
@@ -63,6 +68,16 @@ class Command(BaseCommand):
                     setattr(w, k, v)
                 w.save()
                 done.append(f"œuvre {slug}")
+        # Couvertures fournies par l'auteur : posées seulement si l'œuvre n'en a pas encore (le Studio garde la main).
+        for slug, color in COVERS.items():
+            w = Work.objects.filter(slug=slug).first()
+            path = COVERS_DIR / f"{slug}.jpg"
+            if w and path.exists() and (force or not w.cover):
+                with path.open("rb") as f:
+                    w.cover.save(f"{slug}.jpg", File(f), save=False)
+                w.cover_color = color
+                w.save()
+                done.append(f"couverture {slug}")
         for slug, data in C.TRAININGS.items():
             t = Training.objects.filter(slug=slug).first()
             if t and (force or len(t.summary) < 120 or not t.faq or len(t.objectives) < 4):
