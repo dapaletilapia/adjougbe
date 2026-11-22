@@ -32,12 +32,17 @@ export function ArticleBanner({ b }: { b: Banner }) {
   )
 }
 
-/** Insère les bannières « milieu » après le paragraphe central du HTML de l'article. */
+/** Insère les bannières « milieu » après le paragraphe central de l'article.
+ *  Découpe sur les blocs de premier niveau (via le DOM, pas une regex) : chaque moitié reste du HTML bien formé. */
 export function splitForMiddle(html: string): [string, string] {
-  const ends = [...html.matchAll(/<\/p>/g)].map((m) => (m.index ?? 0) + 4)
-  if (ends.length < 2) return [html, '']
-  const cut = ends[Math.floor((ends.length - 1) / 2)]
-  return [html.slice(0, cut), html.slice(cut)]
+  const tpl = document.createElement('template')
+  tpl.innerHTML = html
+  const nodes = [...tpl.content.childNodes]
+  const paras = nodes.filter((n) => n.nodeName === 'P')
+  if (paras.length < 2) return [html, '']
+  const cut = nodes.indexOf(paras[Math.floor((paras.length - 1) / 2)]) + 1
+  const ser = (ns: ChildNode[]) => { const d = document.createElement('div'); d.append(...ns.map((n) => n.cloneNode(true))); return d.innerHTML }
+  return [ser(nodes.slice(0, cut)), ser(nodes.slice(cut))]
 }
 
 const KIND_STYLE: Record<string, [string, string]> = {
