@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { post } from '../lib/api'
 
 /** Réseaux proposés dans le menu de partage, avec leur couleur officielle. */
@@ -21,17 +22,42 @@ export function ShareButton({ url, text, slug, cardUrl, dark = false, label = 'P
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const menu = useRef<HTMLDivElement>(null)
+  // Le menu est rendu à la racine de la page, en position fixe : un bloc parent « overflow: hidden »
+  // (carte de la punchline, popup) ne peut plus le couper. Il s'ouvre là où il y a la place.
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const [tick, setTick] = useState(0)  // défilement / redimensionnement : on replace le menu contre le bouton
+  useLayoutEffect(() => {
+    if (!open || !ref.current || !menu.current) return
+    const b = ref.current.getBoundingClientRect()
+    const w = menu.current.offsetWidth, h = menu.current.offsetHeight, gap = 8, vw = window.innerWidth, vh = window.innerHeight
+    const below = b.bottom + gap + h <= vh, above = b.top - gap - h >= 0
+    const top = (up ? (above || !below) : (!below && above)) ? b.top - gap - h : Math.min(b.bottom + gap, Math.max(gap, vh - h - gap))
+    const left = Math.min(Math.max(gap, align === 'right' ? b.right - w : b.left), vw - w - gap)
+    setPos({ top, left })
+  }, [open, up, align, tick])
   const full = url.startsWith('http') ? url : window.location.origin + url
   const message = `${text}\n— à lire sur Adjougbe`
   const track = () => { if (slug) post(`/api/blog/posts/${slug}/share/`).catch(() => {}) }
 
   useEffect(() => {
     if (!open) return
-    const onDoc = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    const onDoc = (e: MouseEvent) => { const t = e.target as Node; if (!ref.current?.contains(t) && !menu.current?.contains(t)) setOpen(false) }
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); ref.current?.querySelector('button')?.focus() } }
+    // Défilement ou redimensionnement : le menu suit le bouton ; il se ferme si le bouton sort de l'écran.
+    const close = () => {
+      const r = ref.current?.getBoundingClientRect()
+      if (!r || r.bottom < 0 || r.top > window.innerHeight) setOpen(false)
+      else setTick((n) => n + 1)
+    }
     document.addEventListener('mousedown', onDoc)
     document.addEventListener('keydown', onKey)
-    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey) }
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey)
+      window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close)
+    }
   }, [open])
 
   const nativeShare = async () => {
@@ -50,6 +76,7 @@ export function ShareButton({ url, text, slug, cardUrl, dark = false, label = 'P
     } catch { /* partage annulé */ }
   }
   const onClick = () => {
+    setPos(null)
     // Téléphone et tablette : la feuille de partage du système connaît déjà les applications de la personne.
     const touch = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches
     if (touch && 'share' in navigator) nativeShare()
@@ -68,9 +95,9 @@ export function ShareButton({ url, text, slug, cardUrl, dark = false, label = 'P
         className={`inline-flex h-11 items-center gap-2 rounded-full text-[14.5px] font-semibold transition-colors ${label ? 'px-5' : 'w-11 justify-center'} ${btn}`}>
         <i className="fi fi-rr-share text-[16px] leading-none" aria-hidden="true" />{label}
       </button>
-      {open && (
-        <div role="menu" aria-label="Partager sur"
-          className={`absolute z-50 w-[250px] rounded-2xl bg-[var(--card)] p-2 shadow-[0_24px_50px_-20px_rgba(4,28,92,.45)] ring-1 ring-ink/[.06] ${up ? 'bottom-full mb-2' : 'top-full mt-2'} ${align === 'right' ? 'right-0' : 'left-0'}`}>
+      {open && createPortal(
+        <div ref={menu} role="menu" aria-label="Partager sur" style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, visibility: pos ? 'visible' : 'hidden' }}
+          className="fixed z-[70] w-[250px] rounded-2xl bg-[var(--card)] p-2 shadow-[0_24px_50px_-20px_rgba(4,28,92,.45)] ring-1 ring-ink/[.06]">
           {NETWORKS.map((n) => (
             <a key={n.key} role="menuitem" href={n.href(full, message)} target="_blank" rel="noopener noreferrer" onClick={() => { track(); setOpen(false) }} className={item}>
               <span className={dot} style={{ background: n.color }}><i className={`fi fi-brands-${n.icon} leading-none`} aria-hidden="true" /></span>{n.label}
@@ -87,7 +114,8 @@ export function ShareButton({ url, text, slug, cardUrl, dark = false, label = 'P
             <span className={`${dot} bg-paper !text-[var(--fg)]`}><i className={`fi fi-rr-${copied ? 'check' : 'link-alt'} leading-none`} aria-hidden="true" /></span>
             {copied ? <span role="status" className="text-ok">Lien copié</span> : 'Copier le lien'}
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
