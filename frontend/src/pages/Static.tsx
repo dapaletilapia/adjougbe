@@ -58,6 +58,35 @@ const SEMIO: [string, string, string][] = [
   ['users', 'L\u2019amitié', 'Solidarité et relations humaines.'],
 ]
 
+/** Domaines de formation et d'intervention, gérés dans Studio → Paramètres → Pages. */
+function Expertise() {
+  const { data, loading } = useApi<{ id: number; title: string; description: string; icon: string }[]>('/api/expertise/')
+  if (loading) return null  // pas d'ancre avant les données : le défilement vers #domaines attend la vraie section
+  if (!data?.length) return <span id="domaines" />
+  return (
+    <section id="domaines" aria-labelledby="domaines-titre" className="scroll-mt-28 border-t border-line py-16 md:py-20">
+      <div className="container-x grid max-w-[1120px] gap-10 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-16">
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <h2 id="domaines-titre" className="text-[28px] leading-tight md:text-[32px]">Domaines d'intervention</h2>
+          <p className="mt-3 text-[15.5px] leading-relaxed text-muted">Les sujets sur lesquels Adjougbe forme, anime des ateliers et intervient en conférence : pour ses propres formations comme pour celles d'écoles, d'entreprises et d'associations.</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to="/contact?objet=Formation%20en%20entreprise" className="btn btn-primary shadow-orange">Inviter Adjougbe</Link>
+            <Link to="/formations" className="btn btn-ghost">Voir les formations</Link>
+          </div>
+        </div>
+        <ul className="grid gap-x-10 sm:grid-cols-2">
+          {data.map((a) => (
+            <li key={a.id} className="flex gap-4 border-b border-line py-6">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-tint text-[20px] text-blue"><Icon name={a.icon} /></span>
+              <span><b className="block text-[17px] leading-snug">{a.title}</b>{a.description && <span className="mt-1.5 block text-[14.5px] leading-relaxed text-muted">{a.description}</span>}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
 /** À propos (maquette 11g) : biographie éditable dans le Studio + sémiologie du logo. */
 function About({ html, loading }: { html?: string; loading: boolean }) {
   const { data } = useApi('/api/blog/home/')
@@ -92,6 +121,7 @@ function About({ html, loading }: { html?: string; loading: boolean }) {
           <Link to="/contact" className="btn btn-blue mt-8">Inviter Adjougbe</Link>
         </div>
       </section>
+      {!loading && <Expertise />}
       <section className="bg-paper py-20">
         <div className="container-x grid items-center gap-12 lg:grid-cols-[auto_1fr]">
           <div className="hero-grad relative mx-auto grid h-64 w-64 place-items-center rounded-[28px] shadow-[0_30px_60px_-24px_rgba(4,28,92,.7)]">
@@ -116,9 +146,16 @@ function About({ html, loading }: { html?: string; loading: boolean }) {
   )
 }
 
+/** Sujet passé dans l'adresse (?objet=…) : présélectionné dans le premier champ à choix qui le propose. */
+function prefill(form: { fields: { key: string; options: string[] }[] }, objet: string) {
+  const f = objet ? form.fields.find((x) => x.options?.some((o) => o.toLowerCase() === objet.toLowerCase())) : undefined
+  return f ? { [f.key]: f.options.find((o) => o.toLowerCase() === objet.toLowerCase())! } : undefined
+}
+
 export function Contact() {
   useTitle('Contact')
   const { data, loading } = useApi('/api/forms/contact/')
+  const objet = useSearchParams()[0].get('objet') ?? ''
   const site = useSettings<{ contact_email: string; whatsapp_number: string }>()
   const s = site.data
   return (
@@ -154,7 +191,7 @@ export function Contact() {
           <div className="card p-6 md:p-10">
             <h2 className="text-[26px]">Envoyer un message</h2>
             <p className="mt-1.5 mb-7 text-muted">Tous les champs marqués d'un astérisque sont obligatoires.</p>
-            {loading ? <Spinner /> : data && <DynamicForm form={data} />}
+            {loading ? <Spinner /> : data && <DynamicForm key={objet} form={data} initial={prefill(data, objet)} />}
           </div>
         </div>
       </div>

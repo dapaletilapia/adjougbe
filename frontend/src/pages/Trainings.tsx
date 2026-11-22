@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { PageHero } from '../components/PageHero'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { DynamicForm } from '../components/DynamicForm'
 import { Empty, ErrorNote, Icon, Spinner } from '../components/ui'
 import { post } from '../lib/api'
@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth'
 import { dateFr, downloadIcs, fcfa } from '../lib/format'
 import { useApi, useTitle } from '../lib/hooks'
 import { PaymentPicker } from './Cart'
+import { hostLabel, isExternal, TrainingPoster } from '../components/TrainingPoster'
 
 
 const STATUS_TXT: Record<string, [string, string]> = {
@@ -24,61 +25,137 @@ function DateBadge({ iso, big = false }: { iso: string; big?: boolean }) {
   )
 }
 
+/** Mention « Organisé par … / Adjougbe intervient » pour les formations des partenaires. */
+function HostTag({ t, light = false }: { t: any; light?: boolean }) {
+  if (!t.organizer && t.author_role !== 'speaker') return null
+  const role = t.author_role === 'speaker' ? 'Intervenant' : 'Co-organisateur'
+  return (
+    <span className={`inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-semibold ${light ? 'bg-white/95 text-ink shadow' : 'bg-blue-tint text-blue'}`}>
+      <Icon name="handshake" className="shrink-0" /><span className="truncate">{role} · {hostLabel(t)}</span>
+    </span>
+  )
+}
+
+const day = (iso: string, o: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleDateString('fr-FR', o)
+
+/** Miniature « billet » : l'affiche, une découpe, puis le talon avec la date et l'action. */
+function TrainingCard({ t }: { t: any }) {
+  const s = t.next_session
+  const ext = isExternal(t)
+  const [lbl, tone] = STATUS_TXT[s?.status ?? 'done']
+  const href = `/formations/${t.slug}`
+  const where = s?.location ? s.location.split(',')[0] : ''
+  return (
+    <article className="group relative flex flex-col overflow-hidden rounded-[18px] bg-[var(--card)] shadow-[0_24px_48px_-32px_rgba(4,28,92,.55)] ring-1 ring-ink/[.06] transition-shadow hover:shadow-[0_30px_60px_-30px_rgba(4,28,92,.7)]">
+      <Link to={href} className="relative block" tabIndex={-1} aria-hidden="true">
+        <TrainingPoster t={t} className="aspect-[4/3]" />
+        <span className="absolute top-3 left-3 right-3 flex flex-wrap items-start justify-between gap-2">
+          <HostTag t={t} light />
+          {s && !ext && <span className={`chip ${tone} ml-auto shadow`}>{lbl}</span>}
+        </span>
+      </Link>
+      {/* Découpe du billet */}
+      <div className="relative h-0 border-t-2 border-dashed border-line" aria-hidden="true">
+        <span className="absolute -top-3 -left-3 h-6 w-6 rounded-full bg-paper" /><span className="absolute -top-3 -right-3 h-6 w-6 rounded-full bg-paper" />
+      </div>
+      <div className="flex flex-1 gap-4 p-5">
+        {s ? (
+          <span className="flex w-14 shrink-0 flex-col items-center border-r border-line pr-4 text-center">
+            <span className="text-[12px] font-semibold text-orange capitalize">{day(s.starts_at, { weekday: 'short' })}</span>
+            <b className="text-[28px] leading-none">{new Date(s.starts_at).getDate()}</b>
+            <span className="text-[13px] text-muted capitalize">{day(s.starts_at, { month: 'short' })}</span>
+          </span>
+        ) : (
+          <span className="grid w-14 shrink-0 place-items-center border-r border-line pr-4 text-muted"><Icon name="calendar-clock" className="text-xl" /></span>
+        )}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <h2 className="text-[17px] leading-snug"><Link to={href} className="after:absolute after:inset-0 hover:text-blue">{t.title}</Link></h2>
+          <p className="mt-1 text-[13.5px] text-muted">{[t.format_label, where, t.duration_label].filter(Boolean).join(' · ')}</p>
+          <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+            <b className="text-[17px] whitespace-nowrap">{t.price_xof ? fcfa(t.price_xof) : ext ? '' : 'Gratuit'}</b>
+            <span className={`relative z-[1] text-[14px] font-semibold ${s?.status === 'full' && !ext ? 'text-muted' : 'text-blue'}`}>
+              {!s ? 'Voir le détail' : ext ? "S'inscrire" : s.status === 'full' ? "Liste d'attente" : s.status === 'open' ? 'Réserver' : 'Voir le détail'}
+            </span>
+          </div>
+          {s && !ext && s.status !== 'done' && (
+            <p className="mt-2 text-[12.5px] text-muted">{s.status === 'full' ? 'Complet' : `${s.seats_left} place${s.seats_left > 1 ? 's' : ''} sur ${s.capacity}`}</p>
+          )}
+        </div>
+      </div>
+    </article>
+  )
+}
+
+/** Bandeau « À l'affiche » : les prochaines formations, en affiches que l'on fait défiler. */
+function UpcomingRail({ items, title = "À l'affiche" }: { items: any[]; title?: string }) {
+  if (!items.length) return null
+  return (
+    <section aria-labelledby="affiche-titre" className="relative overflow-hidden rounded-[22px] bg-[#041C5C] text-white shadow-[0_40px_80px_-40px_rgba(4,28,92,.9)]">
+      <span className="pointer-events-none absolute inset-0 opacity-[.05]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '80px 80px' }} />
+      <span className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(520px 260px at 100% 0%,rgba(63,162,255,.35),transparent 70%)' }} />
+      <div className="relative flex items-end justify-between gap-4 px-5 pt-6 md:px-8 md:pt-7">
+        <div>
+          <h2 id="affiche-titre" className="text-[22px] text-white md:text-[26px]">{title}</h2>
+          <p className="mt-1 text-[14px] text-white/70">{items.length === 1 ? 'La prochaine date' : `Les ${items.length} prochaines dates`}, ici et chez nos partenaires.</p>
+        </div>
+      </div>
+      <ol className="relative flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pt-5 pb-7 [scrollbar-width:thin] md:px-8">
+        {items.map((t) => {
+          const s = t.next_session
+          return (
+            <li key={t.id} className="w-[210px] shrink-0 snap-start md:w-[230px]">
+              <Link to={`/formations/${t.slug}`} className="group block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange">
+                <span className="relative block overflow-hidden rounded-[14px] ring-1 ring-white/15">
+                  <TrainingPoster t={t} className="aspect-[4/5] transition-transform duration-300 group-hover:scale-[1.03]" />
+                  <span className="absolute top-3 left-3 rounded-lg bg-white px-2.5 py-1.5 text-[13px] font-bold text-ink shadow">
+                    {day(s.starts_at, { day: 'numeric', month: 'short' })}
+                  </span>
+                </span>
+                <b className="mt-3 line-clamp-2 block text-[15px] leading-snug group-hover:text-orange">{t.title}</b>
+                <span className="mt-0.5 block truncate text-[13px] text-white/65">{isExternal(t) ? hostLabel(t) : t.format_label}</span>
+              </Link>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
+const FILTERS: [string, string][] = [['upcoming', 'À venir'], ['onsite', 'Présentiel'], ['online', 'En ligne'], ['free', 'Gratuites'], ['partners', 'Chez nos partenaires'], ['done', 'Passées']]
+
 export default function Trainings() {
   useTitle('Formations')
   const [filter, setFilter] = useState('upcoming')
   const { data, loading } = useApi<any[]>('/api/trainings/')
-  const list = (data ?? []).filter((t) => {
-    if (filter === 'done') return !t.next_session
-    if (!t.next_session) return false
+  const all = data ?? []
+  const upcoming = all.filter((t) => t.next_session).sort((a, b) => a.next_session.starts_at.localeCompare(b.next_session.starts_at))
+  const list = (filter === 'done' ? all.filter((t) => !t.next_session) : upcoming).filter((t) => {
     if (filter === 'onsite') return t.format === 'onsite'
-    if (filter === 'online') return t.format === 'online'
-    if (filter === 'free') return t.is_free
+    if (filter === 'online') return t.format !== 'onsite'
+    if (filter === 'free') return t.is_free && !isExternal(t)
+    if (filter === 'partners') return !!t.organizer || t.author_role === 'speaker'
     return true
   })
   return (
     <>
-      <PageHero crumbs={[['Accueil', '/'], ['Formations']]} eyebrow="PRÉSENTIEL · EN LIGNE" title="Apprendre à" accent="diriger, ensemble."
-        text="Masterclass et ateliers animés par Adjougbe, à Abidjan ou en direct en ligne." base="var(--color-paper)" />
+      <PageHero crumbs={[['Accueil', '/'], ['Formations']]} title="Apprendre à" accent="diriger, ensemble."
+        text="Masterclass et ateliers animés par Adjougbe, à Abidjan, en ligne ou chez des organisations partenaires." base="var(--color-paper)" />
       <div className="bg-paper pb-24">
-        <div className="container-x relative z-[1] flex flex-wrap gap-2.5">
-          {[['upcoming', 'À venir'], ['onsite', 'Présentiel'], ['online', 'En ligne'], ['free', 'Gratuites'], ['done', 'Terminées']].map(([v, l]) => (
-            <button key={v} onClick={() => setFilter(v)} aria-pressed={filter === v}
-              className={`rounded-full px-[18px] py-2.5 text-sm font-medium ${filter === v ? 'bg-ink text-white' : 'bg-[var(--card)]'}`}>{l}</button>
-          ))}
+        {upcoming.length > 0 && <div className="container-x relative z-[1] -mt-4 mb-10 md:-mt-8 md:mb-12"><UpcomingRail items={upcoming.slice(0, 8)} /></div>}
+        <div className="container-x">
+          <h2 className="sr-only">Toutes les formations</h2>
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Filtrer les formations">
+            {FILTERS.map(([v, l]) => (
+              <button key={v} onClick={() => setFilter(v)} aria-pressed={filter === v}
+                className={`shrink-0 rounded-full px-[18px] py-2.5 text-sm font-medium ${filter === v ? 'bg-ink text-white' : 'bg-[var(--card)] hover:text-blue'}`}>{l}</button>
+            ))}
+          </div>
         </div>
-        <div className="container-x mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="container-x mt-7 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {loading && <Spinner />}
-          {!loading && !list.length && <Empty title="Aucune formation pour ce filtre">Inscrivez-vous à la newsletter pour être prévenu des prochaines sessions.</Empty>}
-          {list.map((t) => {
-            const s = t.next_session
-            const taken = s ? s.capacity - s.seats_left : 0
-            const [lbl, tone] = STATUS_TXT[s?.status ?? 'done']
-            return (
-              <article key={t.id} className="card flex flex-col overflow-hidden">
-                <Link to={`/formations/${t.slug}`} className="relative block h-44">
-                  {t.cover ? <img src={t.cover} alt="" className="h-full w-full object-cover" /> : <div className="hero-grad h-full w-full"><img src="/mark-mono.svg" alt="" className="absolute -right-6 -bottom-8 h-40 opacity-10" /></div>}
-                  {s && <span className="absolute top-4 left-4"><DateBadge iso={s.starts_at} /></span>}
-                  <span className={`chip ${tone} absolute top-4 right-4`}>{lbl}</span>
-                </Link>
-                <div className="flex flex-1 flex-col p-5">
-                  <p className="text-xs text-muted">{t.format_label}{s?.location ? ` · ${s.location.split(',')[0]}` : ''}{t.duration_label ? ` · ${t.duration_label}` : ''}</p>
-                  <h2 className="mt-1.5 text-lg leading-snug"><Link to={`/formations/${t.slug}`}>{t.title}</Link></h2>
-                  {s && (
-                    <>
-                      <div className="mt-4 h-1.5 rounded-full bg-[#EFF0F2]"><div className="h-full rounded-full" style={{ width: `${Math.min(100, (taken / s.capacity) * 100)}%`, background: s.status === 'full' ? '#FF6B29' : 'linear-gradient(90deg,#1560DC,#3FA2FF)' }} /></div>
-                      <div className="mt-1.5 flex justify-between text-xs text-muted"><span>{taken} / {s.capacity} inscrits</span><span>{s.status === 'full' ? 'Complet' : `${s.seats_left} places`}</span></div>
-                    </>
-                  )}
-                  <div className="mt-auto flex items-center justify-between pt-5">
-                    <b className="text-lg">{t.price_xof ? `${t.price_xof.toLocaleString('fr-FR')} F` : 'Gratuit'}</b>
-                    {s ? <Link to={`/formations/${t.slug}`} className={`btn btn-sm ${s.status === 'full' ? 'btn-ghost' : 'btn-primary'}`}>{s.status === 'full' ? "Liste d'attente" : "S'inscrire"}</Link>
-                      : <Link to={`/formations/${t.slug}`} className="btn btn-ghost btn-sm">Voir</Link>}
-                  </div>
-                </div>
-              </article>
-            )
-          })}
+          {!loading && !list.length && <div className="sm:col-span-2 xl:col-span-3"><Empty title="Aucune formation pour ce filtre">Les prochaines dates sont annoncées dans la newsletter, en bas de page.</Empty></div>}
+          {list.map((t) => <TrainingCard key={t.id} t={t} />)}
         </div>
       </div>
     </>
@@ -93,6 +170,7 @@ export function TrainingDetail() {
   if (error || !t) return <div className="container-x py-10"><ErrorNote error={error} /></div>
   const open = t.sessions.filter((s: any) => ['open', 'full', 'upcoming'].includes(s.status))
   const s = open[0]
+  const ext = isExternal(t)
   const [head, ...tail] = t.title.split(/ (?=&)| — /)
   const time = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h')
   return (
@@ -104,7 +182,7 @@ export function TrainingDetail() {
         <div className="grid content-start gap-10">
           {s && (
             <dl className="grid gap-4 sm:grid-cols-3">
-              {[['calendar', 'Date', dateFr(s.starts_at)], ['clock', 'Horaires', `${time(s.starts_at)} – ${time(s.ends_at)}`], ['marker', 'Lieu', s.location || 'En ligne (lien envoyé aux inscrits)']].map(([i, k, v]) => (
+              {[['calendar', 'Date', dateFr(s.starts_at)], ['clock', 'Horaires', `${time(s.starts_at)} – ${time(s.ends_at)}`], ['marker', 'Lieu', s.location || (ext ? 'En ligne' : 'En ligne (lien envoyé aux inscrits)')]].map(([i, k, v]) => (
                 <div key={k} className="card flex items-center gap-3 p-4">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-tint text-blue"><Icon name={i} /></span>
                   <span><dt className="text-xs text-muted">{k}</dt><dd className="text-sm font-semibold">{v}</dd></span>
@@ -173,40 +251,57 @@ export function TrainingDetail() {
             </section>
           )}
         </div>
-        <aside className="grid content-start gap-4 lg:sticky lg:top-32 lg:-mt-28">
+        <aside className="order-first grid content-start gap-4 lg:order-none lg:sticky lg:top-32 lg:-mt-28">
           <div className="card relative z-[1] overflow-hidden">
-            <div className="hero-grad relative h-36">
-              {t.cover && <img src={t.cover} alt="" className="h-full w-full object-cover" />}
+            <div className="relative">
+              <TrainingPoster t={t} className="aspect-[4/3]" eager />
               {s && <span className="absolute bottom-4 left-5"><DateBadge iso={s.starts_at} big /></span>}
             </div>
             <div className="grid gap-4 p-6">
-              <div className="flex items-center justify-between">
-                <b className="text-[28px]">{t.price_xof ? fcfa(t.price_xof) : 'Gratuit'}</b>
-                {s && <span className={`chip ${STATUS_TXT[s.status][1]}`}>{STATUS_TXT[s.status][0]}</span>}
+              <div className="flex items-center justify-between gap-3">
+                <b className="text-[26px]">{t.price_xof ? fcfa(t.price_xof) : ext ? '' : 'Gratuit'}</b>
+                {s && !ext && <span className={`chip ${STATUS_TXT[s.status][1]}`}>{STATUS_TXT[s.status][0]}</span>}
               </div>
-              {s ? (
+              {ext ? (
+                s && !t.external_registration_url ? <p className="text-sm text-muted">Les inscriptions se font auprès de {hostLabel(t)}. Le lien sera publié ici très bientôt.</p> : s ? (
+                  <>
+                    <a href={t.external_registration_url} target="_blank" rel="noopener noreferrer" className="btn btn-primary shadow-orange !whitespace-normal text-center">
+                      S'inscrire chez l'organisateur <Icon name="arrow-up-right-from-square" />
+                    </a>
+                    <p className="text-[13.5px] leading-relaxed text-muted">Les inscriptions sont gérées par {hostLabel(t)}. Le formulaire s'ouvre dans un nouvel onglet.</p>
+                  </>
+                ) : <p className="text-sm text-muted">Aucune date annoncée pour le moment.</p>
+              ) : s ? (
                 <>
                   <div>
                     <div className="flex justify-between text-sm"><span className="text-muted">Places restantes</span><b>{s.seats_left} / {s.capacity}</b></div>
                     <div className="mt-2 h-2 rounded-full bg-[#EFF0F2]"><div className="h-full rounded-full" style={{ width: `${((s.capacity - s.seats_left) / s.capacity) * 100}%`, background: 'linear-gradient(90deg,#1560DC,#3FA2FF)' }} /></div>
                   </div>
-                  {['open', 'full'].includes(s.status) && (
+                  {['open', 'full'].includes(s.status) ? (
                     <Link to={`/formations/${t.slug}/inscription/${s.id}`} className="btn btn-primary shadow-orange">{s.status === 'full' ? "Rejoindre la liste d'attente" : 'Réserver ma place'}</Link>
-                  )}
+                  ) : <p className="text-sm text-muted">Les inscriptions ouvrent bientôt. Revenez sur cette page ou écrivez-nous.</p>}
                 </>
-              ) : <p className="text-sm text-muted">Aucune session programmée. Inscrivez-vous à la newsletter pour être prévenu.</p>}
+              ) : <p className="text-sm text-muted">Aucune session programmée. Inscrivez-vous à la newsletter, en bas de page, pour être prévenu.</p>}
               {open.length > 1 && (
                 <div className="grid gap-2 border-t border-line pt-4 text-sm">
                   <span className="text-muted">Autres dates</span>
-                  {open.slice(1).map((x: any) => <Link key={x.id} to={`/formations/${t.slug}/inscription/${x.id}`} className="flex justify-between font-medium hover:text-blue"><span>{dateFr(x.starts_at)}</span><span>{x.seats_left} places</span></Link>)}
+                  {open.slice(1).map((x: any) => ext
+                    ? <span key={x.id} className="font-medium">{dateFr(x.starts_at)}</span>
+                    : <Link key={x.id} to={`/formations/${t.slug}/inscription/${x.id}`} className="flex justify-between font-medium hover:text-blue"><span>{dateFr(x.starts_at)}</span><span>{x.seats_left} places</span></Link>)}
                 </div>
               )}
             </div>
           </div>
           <div className="card flex items-center gap-3 p-4">
             <img src="/auteur-hero.webp" alt="" className="h-12 w-12 rounded-full bg-blue-tint object-cover object-top" />
-            <span><span className="block text-xs text-muted">Formateur</span><b>{t.trainer}</b></span>
+            <span className="min-w-0"><span className="block text-xs text-muted">{t.author_role === 'speaker' ? 'Intervenant' : 'Formateur'}</span><b>{t.trainer}</b></span>
           </div>
+          {(t.organizer || t.author_role === 'speaker') && (
+            <div className="card flex items-center gap-3 p-4">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-orange-tint text-lg text-orange"><Icon name="handshake" /></span>
+              <span className="min-w-0"><span className="block text-xs text-muted">Organisé par</span><b>{hostLabel(t)}</b></span>
+            </div>
+          )}
         </aside>
       </div>
     </>
@@ -226,6 +321,7 @@ export function TrainingEnroll() {
   const [busy, setBusy] = useState(false)
   useTitle('Inscription')
   if (t.loading || form.loading) return <div className="container-x"><Spinner /></div>
+  if (t.data && isExternal(t.data)) return <Navigate to={`/formations/${slug}`} replace />
   const session = t.data?.sessions.find((s: any) => String(s.id) === sessionId)
   if (!session) return <div className="container-x py-10"><ErrorNote error={new Error('Session introuvable.')} /></div>
   const needsForm = !!t.data.registration_form && !responseId

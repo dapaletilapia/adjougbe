@@ -79,6 +79,22 @@ class Banner(TimeStampedModel):
         return self.title
 
 
+class ExpertiseArea(models.Model):
+    """Domaines de formation et d'intervention, affichés sur la page À propos."""
+
+    title = models.CharField(max_length=120)
+    description = models.TextField(blank=True, max_length=600)
+    icon = models.CharField(max_length=40, default="bulb")
+    position = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+
+    def __str__(self):
+        return self.title
+
+
 class ReleaseNote(models.Model):
     """Journal des versions visible dans le back-office (section 23)."""
 

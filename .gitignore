@@ -17,3 +17,10 @@ backups/
 .env.vercel
 .vercel
 .env*
+
+# Tests de bout en bout
+e2e/node_modules/
+e2e/.media/
+e2e/.private/
+e2e/.*.log
+e2e/.echec-*.png

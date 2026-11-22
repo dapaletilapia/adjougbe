@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.accounts.models import DeviceSession, User
 from apps.blog.models import Category, Comment
 from apps.catalog.models import Bundle, Review, Section, Work
-from apps.core.models import AuditLog, Banner, ReleaseNote, SiteSettings
+from apps.core.models import AuditLog, Banner, ExpertiseArea, ReleaseNote, SiteSettings
 from apps.newsletter.models import Campaign, Subscriber
 from apps.reader.models import AbuseAlert
 from apps.shop.models import Access, Order, PromoCode
@@ -215,8 +215,21 @@ class AdminTrainingSerializer(serializers.ModelSerializer):
         model = Training
         fields = ["id", "slug", "title", "theme", "format", "summary", "objectives", "audience", "program",
                   "duration_label", "trainer", "cover", "price_xof", "faq", "testimonials", "registration_form_id",
-                  "is_published", "sessions", "enrollments_count", "created_at"]
+                  "is_published", "sessions", "enrollments_count", "created_at", "author_role", "organizer",
+                  "registration_mode", "external_registration_url"]
         extra_kwargs = {"slug": {"required": False}}
+
+    def validate_external_registration_url(self, value):
+        if value and not value.startswith("https://"):
+            raise serializers.ValidationError("Le lien doit commencer par https://")
+        return value
+
+    def validate(self, attrs):
+        mode = attrs.get("registration_mode", getattr(self.instance, "registration_mode", Training.Registration.SITE))
+        url = attrs.get("external_registration_url", getattr(self.instance, "external_registration_url", ""))
+        if mode == Training.Registration.EXTERNAL and not url:
+            raise serializers.ValidationError({"external_registration_url": "Indiquez le lien du formulaire de l'organisateur."})
+        return attrs
 
     def get_enrollments_count(self, obj):
         return Enrollment.objects.filter(session__training=obj, status=Enrollment.Status.CONFIRMED).count()
@@ -266,6 +279,19 @@ class AdminBannerSerializer(serializers.ModelSerializer):
         model = Banner
         fields = ["id", "title", "subtitle", "image", "link_url", "link_label", "placement", "starts_at", "ends_at",
                   "is_active", "position"]
+
+
+class AdminExpertiseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExpertiseArea
+        fields = ["id", "title", "description", "icon", "position", "is_published"]
+
+    def validate_icon(self, value):
+        # Nom d'icône Flaticon : lettres, chiffres et tirets seulement (utilisé dans une classe CSS).
+        import re
+        if not re.fullmatch(r"[a-z0-9-]{1,40}", value or ""):
+            raise serializers.ValidationError("Icône invalide.")
+        return value
 
 
 class AdminSettingsSerializer(serializers.ModelSerializer):

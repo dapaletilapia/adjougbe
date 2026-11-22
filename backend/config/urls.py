@@ -17,6 +17,7 @@ urlpatterns = [
     path("api/settings/", core.public_settings),
     path("api/search/", core.search),
     path("api/pages/<slug:key>/", core.page),
+    path("api/expertise/", core.expertise),
     path("api/auth/", include("apps.accounts.urls")),
     path("api/catalog/", include("apps.catalog.urls")),
     path("api/shop/", include("apps.shop.urls")),

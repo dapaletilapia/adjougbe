@@ -131,6 +131,16 @@ TRAININGS = {
     },
 }
 
+# Domaines de formation et d'intervention (page À propos) — proposition à valider par l'auteur.
+EXPERTISE = [
+    ("Leadership et management", "Diriger une équipe, décider, déléguer et faire grandir ceux qui vous suivent.", "crown"),
+    ("Prise de parole en public", "Captiver une salle, structurer son discours et gérer le trac.", "microphone"),
+    ("Écriture et storytelling", "Écrire court et juste, raconter une histoire qui marque et donne envie d'agir.", "pencil"),
+    ("Développement personnel", "Se relever après un échec, garder le cap et transformer ses erreurs en leçons.", "seedling"),
+    ("Entrepreneuriat", "Passer de l'idée à l'action, oser se lancer et tenir dans la durée.", "rocket-lunch"),
+    ("Jeunesse et éducation", "Conférences et ateliers pour élèves, étudiants et jeunes professionnels.", "graduation-cap"),
+]
+
 POSTS = [
     {
         "slug": "dans-les-coulisses-du-tome-2",

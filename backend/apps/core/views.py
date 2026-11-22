@@ -28,6 +28,13 @@ def page(request, key):
 
 
 @api_view(["GET"])
+def expertise(request):
+    from .models import ExpertiseArea
+    rows = ExpertiseArea.objects.filter(is_published=True).values("id", "title", "description", "icon")
+    return Response(list(rows))
+
+
+@api_view(["GET"])
 def health(request):
     return Response({"status": "ok"})
 

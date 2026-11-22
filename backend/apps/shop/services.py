@@ -50,9 +50,11 @@ def build_lines(items, user=None, gift=False) -> list[Line]:
                 raise ValidationError({"items": "Offre indisponible."})
             lines.append(Line("bundle", b, b.title, b.price_xof, [w.pk for w in b.works.all()]))
         elif kind == "session":
-            s = TrainingSession.objects.filter(pk=pk).select_related("training").first()
+            s = TrainingSession.objects.filter(pk=pk, training__is_published=True).select_related("training").first()
             if not s:
                 raise ValidationError({"items": "Session introuvable."})
+            if s.training.registration_mode == s.training.Registration.EXTERNAL:
+                raise ValidationError({"items": "L'inscription à cette formation se fait auprès de l'organisateur."})
             lines.append(Line("session", s, str(s), s.effective_price))
         else:
             raise ValidationError({"items": "Article inconnu."})

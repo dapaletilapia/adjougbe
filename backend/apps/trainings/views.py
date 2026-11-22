@@ -42,6 +42,8 @@ class TrainingDetail(generics.RetrieveAPIView):
 def enroll(request, pk):
     session = get_object_or_404(TrainingSession.objects.select_related("training"), pk=pk,
                                 training__is_published=True)
+    if session.training.registration_mode == Training.Registration.EXTERNAL:
+        return Response({"detail": "L'inscription à cette formation se fait auprès de l'organisateur."}, status=400)
     form_response = None
     if request.data.get("form_response_id"):
         form_response = FormResponse.objects.filter(pk=request.data["form_response_id"], user=request.user).first()

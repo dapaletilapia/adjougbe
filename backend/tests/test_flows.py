@@ -409,3 +409,65 @@ class ArticleBannerTests(TestCase):
             self.assertFalse(s.is_valid(), bad)
         s = AdminPostSerializer(data={"title": "A", "kind": "article", "banners": [{"title": "x"}] * 5})
         self.assertFalse(s.is_valid())
+
+
+class ExternalTrainingTests(BackofficeTests):
+    def _training(self, **kw):
+        from datetime import timedelta
+        from django.utils import timezone
+        from apps.trainings.models import Training, TrainingSession
+        t = Training.objects.create(title="Leadership", slug="leadership", is_published=True, **kw)
+        s = TrainingSession.objects.create(training=t, starts_at=timezone.now() + timedelta(days=5),
+                                           ends_at=timezone.now() + timedelta(days=5, hours=3))
+        return t, s
+
+    def test_external_training_refuses_site_enrollment(self):
+        t, s = self._training(author_role="speaker", organizer="Institut X", registration_mode="external",
+                              external_registration_url="https://exemple.org/inscription")
+        self.login()
+        r = self.client.post(f"/api/trainings/sessions/{s.pk}/enroll/", {}, content_type="application/json")
+        self.assertEqual(r.status_code, 400)
+        from rest_framework.exceptions import ValidationError
+        from apps.shop.services import build_lines
+        from apps.trainings import services as tsv
+        with self.assertRaises(ValidationError):
+            build_lines([{"type": "session", "id": s.pk}], self.user)
+        with self.assertRaises(ValidationError):
+            tsv.enroll(self.user, s)
+        card = self.client.get("/api/trainings/").json()[0]
+        self.assertEqual(card["organizer"], "Institut X")
+        self.assertEqual(card["external_registration_url"], "https://exemple.org/inscription")
+
+    def test_admin_validates_external_link(self):
+        self._otp_login()
+        base = {"title": "Atelier", "format": "online", "registration_mode": "external"}
+        r = self.client.post("/api/backoffice/trainings/", base, content_type="application/json")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("external_registration_url", r.json())
+        for bad in ("javascript:alert(1)", "http://exemple.org"):
+            r = self.client.post("/api/backoffice/trainings/", {**base, "external_registration_url": bad},
+                                 content_type="application/json")
+            self.assertEqual(r.status_code, 400, bad)
+        r = self.client.post("/api/backoffice/trainings/", {**base, "external_registration_url": "https://exemple.org/f"},
+                             content_type="application/json")
+        self.assertEqual(r.status_code, 201)
+
+    def test_expertise_areas_managed_in_backoffice(self):
+        from apps.core.models import ExpertiseArea
+        self.assertEqual(ExpertiseArea.objects.count(), 6)  # proposés par la migration, une seule fois
+        ExpertiseArea.objects.all().delete()
+        self._otp_login()
+        r = self.client.post("/api/backoffice/expertise/", {"title": "Leadership", "icon": "crown"},
+                             content_type="application/json")
+        self.assertEqual(r.status_code, 201)
+        self.client.post("/api/backoffice/expertise/", {"title": "Brouillon", "icon": "crown", "is_published": False},
+                         content_type="application/json")
+        bad = self.client.post("/api/backoffice/expertise/", {"title": "X", "icon": 'crown" onclick="x'},
+                               content_type="application/json")
+        self.assertEqual(bad.status_code, 400)
+        public = self.client.get("/api/expertise/").json()
+        self.assertEqual([a["title"] for a in public], ["Leadership"])
+        self.client.logout()
+        self.login()
+        self.assertEqual(self.client.post("/api/backoffice/expertise/", {"title": "Y"},
+                                          content_type="application/json").status_code, 403)

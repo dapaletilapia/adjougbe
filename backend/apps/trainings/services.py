@@ -29,6 +29,8 @@ def send_reminder(enr: Enrollment, when: str):
 @transaction.atomic
 def enroll(user, session: TrainingSession, form_response=None) -> Enrollment:
     session = TrainingSession.objects.select_for_update().select_related("training").get(pk=session.pk)
+    if session.training.registration_mode == session.training.Registration.EXTERNAL:
+        raise ValidationError({"detail": "L'inscription à cette formation se fait auprès de l'organisateur."})
     if session.status in (TrainingSession.Status.DONE, TrainingSession.Status.CANCELLED):
         raise ValidationError({"detail": "Cette session n'accepte plus d'inscriptions."})
     existing = Enrollment.objects.filter(user=user, session=session).first()

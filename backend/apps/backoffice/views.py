@@ -22,7 +22,7 @@ from apps.blog.serializers import AdminPostSerializer
 from apps.catalog.models import Bundle, Review, Section, Work
 from apps.core.audit import AuditedModelViewSetMixin, log_action
 from apps.core.emails import send
-from apps.core.models import AuditLog, Banner, ReleaseNote, SiteSettings
+from apps.core.models import AuditLog, Banner, ExpertiseArea, ReleaseNote, SiteSettings
 from apps.core.permissions import BackofficePermission, has_scope
 from apps.forms.models import Form, FormResponse
 from apps.forms.serializers import AdminFormSerializer, FormResponseSerializer
@@ -735,6 +735,13 @@ class BannerViewSet(BOViewSet):
     serializer_class = s.AdminBannerSerializer
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     queryset = Banner.objects.all()
+    pagination_class = None
+
+
+class ExpertiseViewSet(BOViewSet):
+    backoffice_scope = "pages"
+    serializer_class = s.AdminExpertiseSerializer
+    queryset = ExpertiseArea.objects.all()
     pagination_class = None
 
 

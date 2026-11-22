@@ -138,11 +138,12 @@ function Emails() {
 }
 
 function PagesTab() {
-  const [page, setPage] = useState('banners')
+  const [params] = useSearchParams()
+  const [page, setPage] = useState(params.get('page') ?? 'banners')
   return (
     <div className="grid gap-4">
-      <Pills value={page} onChange={setPage} options={[['banners', 'Bannières'], ['about_html', 'À propos'], ['terms_html', 'CGU'], ['privacy_html', 'Confidentialité'], ['legal_html', 'Mentions légales']]} />
-      {page === 'banners' ? <Banners /> : <PageText key={page} field={page} />}
+      <Pills value={page} onChange={setPage} options={[['banners', 'Bannières'], ['about_html', 'À propos'], ['domaines', "Domaines d'intervention"], ['terms_html', 'CGU'], ['privacy_html', 'Confidentialité'], ['legal_html', 'Mentions légales']]} />
+      {page === 'banners' ? <Banners /> : page === 'domaines' ? <ExpertiseAreas /> : <PageText key={page} field={page} />}
     </div>
   )
 }
@@ -156,6 +157,87 @@ function PageText({ field }: { field: string }) {
     <div className="grid gap-4">
       <RichEditor value={data[field]} onChange={setHtml} />
       <button className="btn btn-blue justify-self-start" disabled={html === null} onClick={async () => { await patch('/api/backoffice/settings/', { [field]: html }); toast('Page enregistrée.') }}>Enregistrer</button>
+    </div>
+  )
+}
+
+// Icônes proposées pour les domaines (Flaticon uicons, déjà chargées sur le site).
+const AREA_ICONS = ['crown', 'microphone', 'pencil', 'seedling', 'rocket-lunch', 'graduation-cap', 'bulb', 'users-alt', 'handshake', 'comment-alt', 'heart', 'briefcase', 'book-open-reader', 'chart-line-up', 'globe', 'balance-scale-left']
+
+/** Domaines d'intervention affichés sur la page À propos (ajout, ordre, publication). */
+function ExpertiseAreas() {
+  const { data, reload } = useApi<any[]>('/api/backoffice/expertise/')
+  const [editing, setEditing] = useState<any>(null)
+  const toast = useToast()
+  const [moving, setMoving] = useState(false)
+  const move = async (i: number, dir: -1 | 1) => {
+    const list = [...(data ?? [])]
+    const j = i + dir
+    if (moving || j < 0 || j >= list.length) return
+    ;[list[i], list[j]] = [list[j], list[i]]
+    setMoving(true)
+    try {
+      await Promise.all(list.map((a, k) => a.position !== k ? patch(`/api/backoffice/expertise/${a.id}/`, { position: k }) : null))
+    } catch (e) {
+      toast(`Ordre non enregistré : ${(e as Error).message}`)
+    } finally {
+      reload()
+      setMoving(false)
+    }
+  }
+  return (
+    <div className="grid gap-3">
+      <p className="text-sm text-muted">Affichés sur la page <a href="/a-propos#domaines" target="_blank" rel="noreferrer" className="font-semibold text-blue">À propos → Domaines d'intervention</a>, dans cet ordre.</p>
+      <div><button className="btn btn-primary btn-sm" onClick={() => setEditing({ title: '', description: '', icon: 'bulb', position: data?.length ?? 0, is_published: true })}>+ Nouveau domaine</button></div>
+      <TableWrap loading={!data} empty={!data?.length}>
+        <table className="table"><tbody>
+          {data?.map((a, i) => (
+            <tr key={a.id}>
+              <td className="w-12"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-tint text-blue"><Icon name={a.icon} /></span></td>
+              <td><button className="text-left font-semibold hover:text-blue" onClick={() => setEditing(a)}>{a.title}</button><span className="line-clamp-1 block text-xs text-muted">{a.description}</span></td>
+              <td>{a.is_published ? <span className="chip chip-ok">Publié</span> : <span className="chip">Masqué</span>}</td>
+              <td className="whitespace-nowrap text-right">
+                <button className="px-2 text-muted hover:text-ink disabled:opacity-30" disabled={i === 0 || moving} onClick={() => move(i, -1)} aria-label={`Monter ${a.title}`}><Icon name="arrow-small-up" /></button>
+                <button className="px-2 text-muted hover:text-ink disabled:opacity-30" disabled={i === data.length - 1 || moving} onClick={() => move(i, 1)} aria-label={`Descendre ${a.title}`}><Icon name="arrow-small-down" /></button>
+              </td>
+            </tr>
+          ))}
+        </tbody></table>
+      </TableWrap>
+      <Drawer open={!!editing} onClose={() => setEditing(null)} title={editing?.id ? 'Modifier le domaine' : 'Nouveau domaine'}>
+        {editing && <ExpertiseForm key={editing.id ?? 'new'} area={editing} onDone={(msg) => { setEditing(null); reload(); toast(msg) }} />}
+      </Drawer>
+    </div>
+  )
+}
+
+function ExpertiseForm({ area, onDone }: { area: any; onDone: (msg: string) => void }) {
+  const ed = useEditor({ ...area })
+  const v = ed.v
+  const save = () => ed.run(async () => {
+    const body = { title: v.title, description: v.description, icon: v.icon, position: v.position, is_published: v.is_published }
+    if (v.id) await patch(`/api/backoffice/expertise/${v.id}/`, body); else await post('/api/backoffice/expertise/', body)
+    onDone('Domaine enregistré.')
+  }).catch(() => {})
+  return (
+    <div className="grid gap-4">
+      <Field label="Intitulé" error={ed.fe('title')}><input className="input" maxLength={120} value={v.title} onChange={(e) => ed.set('title', e.target.value)} placeholder="Ex. Prise de parole en public" /></Field>
+      <Field label="Description" hint="Une ou deux phrases." error={ed.fe('description')}><textarea className="input" rows={3} maxLength={600} value={v.description} onChange={(e) => ed.set('description', e.target.value)} /></Field>
+      <fieldset>
+        <legend className="mb-2 text-sm font-medium">Icône</legend>
+        <div className="flex flex-wrap gap-2">
+          {AREA_ICONS.map((i) => (
+            <button key={i} type="button" onClick={() => ed.set('icon', i)} aria-pressed={v.icon === i} aria-label={i}
+              className={`grid h-11 w-11 place-items-center rounded-xl text-lg ${v.icon === i ? 'bg-blue text-white' : 'bg-paper text-ink-soft hover:text-blue'}`}><Icon name={i} /></button>
+          ))}
+        </div>
+      </fieldset>
+      <label className="flex items-center gap-2"><input type="checkbox" className="accent-orange" checked={v.is_published} onChange={(e) => ed.set('is_published', e.target.checked)} /> Afficher sur la page À propos</label>
+      <ErrorNote error={ed.err} />
+      <div className="flex gap-2">
+        <button className="btn btn-primary" onClick={save} disabled={ed.busy || !v.title.trim()}>Enregistrer</button>
+        {v.id && <Confirm text="Supprimer ce domaine ?" danger onConfirm={async () => { await del(`/api/backoffice/expertise/${v.id}/`); onDone('Domaine supprimé.') }}><button className="btn btn-ghost text-danger">Supprimer</button></Confirm>}
+      </div>
     </div>
   )
 }

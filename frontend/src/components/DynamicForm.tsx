@@ -12,10 +12,14 @@ export type PublicForm = {
 }
 
 /** Rend un formulaire créé dans le back-office (champs, logique conditionnelle, consentement). */
-export function DynamicForm({ form, query = '', submitLabel = 'Envoyer', onDone }: {
-  form: PublicForm; query?: string; submitLabel?: string; onDone?: (r: any) => void
+export function DynamicForm({ form, query = '', submitLabel = 'Envoyer', onDone, initial }: {
+  form: PublicForm; query?: string; submitLabel?: string; onDone?: (r: any) => void; initial?: Record<string, string>
 }) {
-  const [values, setValues] = useState<Record<string, any>>({})
+  // Valeurs pré-remplies (ex. sujet choisi depuis un lien) : seulement pour des champs et options existants.
+  const [values, setValues] = useState<Record<string, any>>(() => Object.fromEntries(Object.entries(initial ?? {}).filter(([k, v]) => {
+    const f = form.fields.find((x) => x.key === k)
+    return f && (!f.options?.length || f.options.includes(v))
+  })))
   const [files, setFiles] = useState<Record<string, File>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<unknown>(null)

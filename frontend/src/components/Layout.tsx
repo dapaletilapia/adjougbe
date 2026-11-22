@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { formatPhone } from '../lib/format'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
@@ -9,14 +9,63 @@ import { useSettings } from '../lib/hooks'
 import { Icon, initials, Logo } from './ui'
 
 // Menu de l'en-tête « Adj Header » des maquettes.
-const NAV = [
+type NavItem = { to: string; label: string; children?: { to: string; label: string; hint: string }[] }
+const NAV: NavItem[] = [
   { to: '/', label: 'Accueil' },
   { to: '/boutique', label: 'Œuvres' },
   { to: '/formations', label: 'Formations' },
   { to: '/blog', label: 'Blog' },
-  { to: '/a-propos', label: 'À propos' },
+  {
+    to: '/a-propos', label: 'À propos', children: [
+      { to: '/a-propos', label: 'Présentation', hint: "Son parcours et ce qui l'anime" },
+      { to: '/a-propos#domaines', label: "Domaines d'intervention", hint: 'Les sujets sur lesquels il forme et intervient' },
+    ],
+  },
   { to: '/contact', label: 'Contact' },
 ]
+
+/** Entrée de menu à sous-menu : s'ouvre au survol, au clic et au clavier ; se ferme avec Échap ou en sortant. */
+function NavDropdown({ item }: { item: NavItem }) {
+  const [open, setOpen] = useState(false)
+  const loc = useLocation()
+  const active = loc.pathname.startsWith(item.to)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => { setOpen(false) }, [loc.pathname, loc.hash])
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); ref.current?.querySelector('button')?.focus() } }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey) }
+  }, [open])
+  return (
+    // Le libellé reste un lien vers la page ; la flèche ouvre le sous-menu (clic, clavier, toucher). Survol souris : ouverture aussi.
+    <div ref={ref} className="relative flex items-center gap-0.5"
+      onPointerEnter={(e) => e.pointerType === 'mouse' && setOpen(true)} onPointerLeave={(e) => e.pointerType === 'mouse' && setOpen(false)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false) }}>
+      <NavLink to={item.to} className={active ? 'font-semibold text-blue' : 'hover:text-blue'}>{item.label}</NavLink>
+      <button type="button" aria-expanded={open} aria-controls="sous-menu-apropos" aria-label={`Sous-menu ${item.label}`} onClick={() => setOpen(!open)}
+        className={`-mr-2 grid h-8 w-7 place-items-center rounded-md ${active ? 'text-blue' : 'hover:text-blue'}`}>
+        <Icon name="angle-small-down" className={`text-base transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-1/2 z-50 -translate-x-1/2 pt-4">
+          <ul id="sous-menu-apropos" className="w-[300px] rounded-2xl bg-[var(--card)] p-2 shadow-[0_24px_50px_-20px_rgba(4,28,92,.45)] ring-1 ring-ink/[.06]">
+            {item.children!.map((c) => (
+              <li key={c.to}>
+                <Link to={c.to} className="block rounded-xl px-4 py-3 hover:bg-paper focus-visible:bg-paper">
+                  <b className="block text-[14.5px] text-ink">{c.label}</b>
+                  <span className="text-[13px] font-normal text-muted">{c.hint}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function useTheme() {
   const [theme, setTheme] = useState<string>(() => {
@@ -52,17 +101,17 @@ function Header() {
       {/* Bandeau de réassurance (maquette « Adj Header ») */}
       <div className="hidden bg-ink text-[13.5px] text-[#D9DBE0] md:block">
         <div className="container-x flex items-center gap-8 py-2.5">
-          {[['mobile-notch', 'Paiement Mobile Money'], ['lock', 'Lecture sécurisée'], ['clock', 'Accès immédiat']].map(([i, l]) => (
-            <span key={l} className="flex items-center gap-2"><Icon name={i} className="text-orange" />{l}</span>
+          {[['mobile-notch', 'Paiement Mobile Money'], ['lock', 'Lecture sécurisée'], ['clock', 'Accès immédiat']].map(([i, l], k) => (
+            <span key={l} className={`items-center gap-2 whitespace-nowrap ${k === 2 ? 'hidden lg:flex' : 'flex'}`}><Icon name={i} className="text-orange" />{l}</span>
           ))}
-          {phone && <a href={`https://wa.me/${site!.whatsapp_number}`} className="ml-auto">WhatsApp : <b className="text-white">{phone}</b></a>}
+          {phone && <a href={`https://wa.me/${site!.whatsapp_number}`} className="ml-auto whitespace-nowrap">WhatsApp : <b className="text-white">{phone}</b></a>}
         </div>
       </div>
       <div className="border-b border-[#EFF0F2] bg-[var(--card)]">
         <div className="container-x flex h-[76px] items-center gap-6">
           <Link to="/" aria-label="Accueil Adjougbe"><Logo /></Link>
           <nav className="ml-auto hidden gap-[30px] text-sm font-medium text-ink-soft lg:flex" aria-label="Navigation principale">
-            {NAV.map((n) => (
+            {NAV.map((n) => n.children ? <NavDropdown key={n.to} item={n} /> : (
               <NavLink key={n.to} to={n.to} end={n.to === '/'}
                 className={({ isActive }) => (isActive ? 'font-semibold text-blue' : 'hover:text-blue')}>
                 {n.label}
@@ -98,7 +147,14 @@ function Header() {
               <button onClick={() => setOpen(false)} className="grid h-11 w-11 place-items-center rounded-xl bg-white text-lg text-blue-dark" aria-label="Fermer le menu"><Icon name="cross-small" /></button>
             </div>
             <nav className="relative flex flex-col px-6 py-6 text-[26px] font-semibold" aria-label="Menu mobile">
-              {NAV.map((n, i) => (
+              {NAV.map((n, i) => n.children ? (
+                <div key={n.to} className={`py-3 ${i < NAV.length - 1 ? 'border-b border-white/12' : ''}`}>
+                  <span className={loc.pathname.startsWith(n.to) ? 'text-orange' : ''}>{n.label}</span>
+                  <div className="mt-2 grid gap-1 border-l-2 border-white/20 pl-4 text-[18px] font-medium">
+                    {n.children.map((c) => <Link key={c.to} to={c.to} onClick={() => setOpen(false)} className="py-1.5 text-white/85 hover:text-white">{c.label}</Link>)}
+                  </div>
+                </div>
+              ) : (
                 <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => `py-3 ${i < NAV.length - 1 ? 'border-b border-white/12' : ''} ${isActive ? 'text-orange' : ''}`}>{n.label}</NavLink>
               ))}
             </nav>
@@ -153,12 +209,12 @@ function Footer() {
     <footer className="no-print">
       {!FULL_BLUE.test(pathname) && <div className="relative overflow-hidden text-white" style={{ background: 'radial-gradient(500px 300px at 85% 30%,#3FA2FF,transparent 70%),linear-gradient(125deg,#041C5C,#0A3A9E 45%,#1560DC)' }}>
         <div className="pointer-events-none absolute inset-0 opacity-[.045]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '92px 92px' }} />
-        <div className="container-x relative flex flex-col gap-6 py-12 md:flex-row md:items-center md:gap-12 md:py-14">
+        <div className="container-x relative flex flex-col gap-6 py-12 md:py-14 lg:flex-row lg:items-center lg:gap-12">
           <div className="flex-1">
             <div className="text-[12px] font-semibold tracking-[.14em] opacity-75">RESTONS EN CONTACT</div>
             <p className="mt-2.5 text-2xl font-bold md:text-[30px]">Recevez la punchline du jour</p>
           </div>
-          <div className="w-full md:w-[460px]"><NewsletterForm /></div>
+          <div className="w-full lg:w-[460px]"><NewsletterForm /></div>
         </div>
       </div>}
       <div className="bg-ink text-[#D9DBE0]">
@@ -173,6 +229,7 @@ function Footer() {
             <Link to="/formations" className="hover:text-white">Formations</Link>
             <Link to="/blog" className="hover:text-white">Blog</Link>
             <Link to="/a-propos" className="hover:text-white">À propos</Link>
+            <Link to="/a-propos#domaines" className="hover:text-white">Domaines d'intervention</Link>
           </nav>
           <nav className="flex flex-col gap-2.5 text-[14.5px]" aria-label="Mon compte">
             <b className="mb-1 text-white">Mon compte</b>
@@ -237,7 +294,19 @@ function MobileTabs() {
 export default function Layout() {
   const loc = useLocation()
   // Accolades obligatoires : dans les Chrome récents, scrollTo() renvoie une promesse, que React prendrait pour un nettoyage.
-  useEffect(() => { window.scrollTo(0, 0) }, [loc.pathname])
+  useEffect(() => { if (!loc.hash) window.scrollTo(0, 0) }, [loc.pathname, loc.hash])
+  // Lien vers une ancre (/a-propos#domaines) : la section peut arriver après le chargement des données.
+  useEffect(() => {
+    if (!loc.hash) return
+    let tries = 0
+    let target = loc.hash.slice(1)
+    try { target = decodeURIComponent(target) } catch { /* ancre mal encodée : utilisée telle quelle */ }
+    const id = window.setInterval(() => {
+      const el = document.getElementById(target)
+      if (el || ++tries > 40) { window.clearInterval(id); el?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }) }
+    }, 75)
+    return () => { window.clearInterval(id) }
+  }, [loc.pathname, loc.hash])
   return (
     <div className="flex min-h-screen flex-col">
       <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-ink focus:px-3 focus:py-2 focus:text-white">

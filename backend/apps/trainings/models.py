@@ -30,6 +30,21 @@ class Training(TimeStampedModel):
     testimonials = models.JSONField(default=list, blank=True)
     registration_form = models.ForeignKey("forms_builder.Form", null=True, blank=True, on_delete=models.SET_NULL,
                                           related_name="trainings")
+
+    class Role(models.TextChoices):
+        ORGANIZER = "organizer", "Organisateur"
+        SPEAKER = "speaker", "Intervenant"
+
+    class Registration(models.TextChoices):
+        SITE = "site", "Sur le site"
+        EXTERNAL = "external", "Chez l'organisateur"
+
+    # Formations d'Adjougbe ou d'autres organisations où il intervient : l'inscription peut se faire
+    # sur le formulaire de l'organisateur (lien externe) plutôt que sur le site.
+    author_role = models.CharField(max_length=12, choices=Role.choices, default=Role.ORGANIZER)
+    organizer = models.CharField(max_length=120, blank=True, help_text="Vide = Adjougbe")
+    registration_mode = models.CharField(max_length=10, choices=Registration.choices, default=Registration.SITE)
+    external_registration_url = models.URLField(blank=True, max_length=500)
     is_published = models.BooleanField(default=False)
 
     class Meta:

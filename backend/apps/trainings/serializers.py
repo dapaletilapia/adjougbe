@@ -28,7 +28,8 @@ class SessionCardSerializer(SessionSerializer):
     def get_training(self, obj):
         t = obj.training
         return {"slug": t.slug, "title": t.title, "format": t.format, "format_label": t.get_format_display(),
-                "cover": t.cover.url if t.cover else None, "theme": t.theme}
+                "cover": t.cover.url if t.cover else None, "theme": t.theme, "organizer": t.organizer,
+                "registration_mode": t.registration_mode}
 
 
 class TrainingCardSerializer(serializers.ModelSerializer):
@@ -38,7 +39,8 @@ class TrainingCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Training
         fields = ["id", "slug", "title", "theme", "format", "format_label", "summary", "duration_label", "cover",
-                  "price_xof", "is_free", "next_session"]
+                  "price_xof", "is_free", "next_session", "author_role", "organizer", "registration_mode",
+                  "external_registration_url"]
 
     def get_next_session(self, obj):
         from django.utils import timezone

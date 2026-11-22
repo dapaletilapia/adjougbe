@@ -4,6 +4,7 @@ import { ErrorNote, Field, Spinner } from '../components/ui'
 import { api, del, download, patch, post } from '../lib/api'
 import { dateTime, fcfa } from '../lib/format'
 import { useApi } from '../lib/hooks'
+import { TrainingPoster } from '../components/TrainingPoster'
 import { useToast } from '../lib/toast'
 import { AdminPage, Confirm, Drawer, Panel, TableWrap, toFormData, useEditor } from './kit'
 
@@ -19,7 +20,10 @@ export function TrainingsList() {
           <tbody>
             {data?.results.map((t: any) => (
               <tr key={t.id}>
-                <td><Link to={`/admin/formations/${t.id}`} className="font-semibold">{t.title}</Link></td>
+                <td>
+                  <Link to={`/admin/formations/${t.id}`} className="font-semibold">{t.title}</Link>
+                  {(t.organizer || t.registration_mode === 'external') && <span className="block text-xs text-muted">{t.organizer || 'Adjougbe'}{t.registration_mode === 'external' ? ' · inscriptions chez l\u2019organisateur' : ''}</span>}
+                </td>
                 <td>{{ online: 'En ligne', onsite: 'Présentiel', recorded: 'Enregistrée' }[t.format as string]}</td>
                 <td>{t.price_xof ? fcfa(t.price_xof) : 'Gratuit'}</td>
                 <td className="text-sm">{t.sessions.map((s: any) => (
@@ -36,7 +40,7 @@ export function TrainingsList() {
   )
 }
 
-const EMPTY = { title: '', theme: '', format: 'online', summary: '', objectives: [], audience: '', program: [], duration_label: '', trainer: 'Adjougbe', price_xof: 0, faq: [], testimonials: [], registration_form_id: null, is_published: false, sessions: [] }
+const EMPTY = { title: '', theme: '', format: 'online', summary: '', objectives: [], audience: '', program: [], duration_label: '', trainer: 'Adjougbe', price_xof: 0, faq: [], testimonials: [], registration_form_id: null, is_published: false, sessions: [], author_role: 'organizer', organizer: '', registration_mode: 'site', external_registration_url: '' }
 
 export function TrainingEdit() {
   const { id } = useParams()
@@ -187,6 +191,7 @@ function TrainingForm({ training }: { training: any }) {
   const ed = useEditor({ ...training })
   const forms = useApi('/api/backoffice/forms/?purpose=training')
   const [cover, setCover] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
   const nav = useNavigate()
   const toast = useToast()
   const v = ed.v
@@ -210,12 +215,46 @@ function TrainingForm({ training }: { training: any }) {
         <Field label="Prix (FCFA, 0 = gratuit)"><input className="input" type="number" value={v.price_xof} onChange={(e) => ed.set('price_xof', Number(e.target.value))} /></Field>
         <Field label="Durée"><input className="input" placeholder="3 heures" value={v.duration_label} onChange={(e) => ed.set('duration_label', e.target.value)} /></Field>
         <Field label="Formateur"><input className="input" value={v.trainer} onChange={(e) => ed.set('trainer', e.target.value)} /></Field>
-        <Field label="Formulaire d'inscription">
-          <select className="input" value={v.registration_form_id ?? ''} onChange={(e) => ed.set('registration_form_id', e.target.value ? Number(e.target.value) : null)}>
-            <option value="">Aucun</option>{forms.data?.results.map((f: any) => <option key={f.id} value={f.id}>{f.title}</option>)}
-          </select>
+      </div>
+      <fieldset className="grid gap-4 rounded-2xl bg-paper p-5">
+        <legend className="sr-only">Organisation et inscription</legend>
+        <b className="text-[15px]">Organisation et inscription</b>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Rôle d'Adjougbe">
+            <select className="input !bg-[var(--card)]" value={v.author_role} onChange={(e) => ed.set('author_role', e.target.value)}>
+              <option value="organizer">Organisateur (sa propre formation)</option><option value="speaker">Intervenant (formation d'une autre organisation)</option>
+            </select>
+          </Field>
+          <Field label="Organisation" hint="Laisser vide si c'est une formation d'Adjougbe."><input className="input !bg-[var(--card)]" placeholder="Ex. Institut Leadership Abidjan" value={v.organizer} onChange={(e) => ed.set('organizer', e.target.value)} /></Field>
+        </div>
+        <div className="grid gap-2">
+          <span className="text-sm font-medium">Où se font les inscriptions ?</span>
+          {[['site', 'Sur le site', 'Formulaire, paiement Mobile Money, rappels et attestation gérés ici.'], ['external', "Chez l'organisateur", 'Le bouton « S\u2019inscrire » ouvre le formulaire de l\u2019organisateur.']].map(([k, l, d]) => (
+            <label key={k} className={`flex cursor-pointer items-start gap-3 rounded-xl border-[1.5px] bg-[var(--card)] p-3.5 ${v.registration_mode === k ? 'border-blue' : 'border-line'}`}>
+              <input type="radio" name="registration_mode" className="mt-1 accent-blue" checked={v.registration_mode === k} onChange={() => ed.set('registration_mode', k)} />
+              <span><b className="block text-sm">{l}</b><span className="text-[13.5px] text-muted">{d}</span></span>
+            </label>
+          ))}
+        </div>
+        {v.registration_mode === 'external' ? (
+          <Field label="Lien du formulaire de l'organisateur" error={ed.fe('external_registration_url')} hint="Adresse complète, commençant par https://">
+            <input className="input !bg-[var(--card)]" type="url" inputMode="url" placeholder="https://" value={v.external_registration_url} onChange={(e) => ed.set('external_registration_url', e.target.value.trim())} />
+          </Field>
+        ) : (
+          <Field label="Formulaire d'inscription" hint="Questions posées avant le paiement (facultatif).">
+            <select className="input !bg-[var(--card)]" value={v.registration_form_id ?? ''} onChange={(e) => ed.set('registration_form_id', e.target.value ? Number(e.target.value) : null)}>
+              <option value="">Aucun</option>{forms.data?.results.map((f: any) => <option key={f.id} value={f.id}>{f.title}</option>)}
+            </select>
+          </Field>
+        )}
+      </fieldset>
+      <div className="grid items-start gap-4 md:grid-cols-[220px_1fr]">
+        <div className="overflow-hidden rounded-xl ring-1 ring-line">
+          <TrainingPoster t={{ ...v, cover: preview ?? v.cover }} className="aspect-[4/5]" />
+        </div>
+        <Field label="Affiche ou bannière de la formation" hint="Visible sur la miniature et en haut de la page. Portrait ou paysage, JPG ou PNG.">
+          <input type="file" accept="image/*" className="input" onChange={(e) => { const f = e.target.files?.[0] ?? null; setCover(f); setPreview((old) => { if (old) URL.revokeObjectURL(old); return f ? URL.createObjectURL(f) : null }) }} />
         </Field>
-        <Field label="Image"><input type="file" accept="image/*" className="input" onChange={(e) => setCover(e.target.files?.[0] ?? null)} /></Field>
       </div>
       <Field label="Présentation"><textarea className="input" value={v.summary} onChange={(e) => ed.set('summary', e.target.value)} /></Field>
       <Field label="Public cible"><textarea className="input" rows={2} value={v.audience} onChange={(e) => ed.set('audience', e.target.value)} /></Field>
