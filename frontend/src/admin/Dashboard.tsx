@@ -198,7 +198,7 @@ export default function Dashboard() {
               <Link to={`/admin/formations/sessions/${session.id}`} className="flex items-center gap-3.5">
                 <div className="flex h-[58px] w-[54px] flex-col items-center justify-center rounded-xl text-white" style={{ background: 'linear-gradient(135deg,#1560DC,#041C5C)' }}>
                   <b className="text-[22px] leading-none">{new Date(session.starts_at).getDate()}</b>
-                  <span className="text-[9px] font-semibold text-[#FF8A5B] uppercase">{new Date(session.starts_at).toLocaleDateString('fr-FR', { month: 'short' })}</span>
+                  <span className="text-[9px] font-semibold text-peach uppercase">{new Date(session.starts_at).toLocaleDateString('fr-FR', { month: 'short' })}</span>
                 </div>
                 <div className="flex-1">
                   <b className="text-sm">{session.training_title}</b>

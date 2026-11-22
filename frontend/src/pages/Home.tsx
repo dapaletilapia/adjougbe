@@ -277,7 +277,7 @@ export default function Home() {
                   <Link to={`/formations/${s.training.slug}`} className="card flex items-center gap-4 p-4 hover:ring-2 hover:ring-blue-tint">
                     <span className="grid h-16 w-14 shrink-0 place-content-center rounded-xl text-center text-white" style={{ background: 'linear-gradient(135deg,#1560DC,#041C5C)' }}>
                       <b className="text-xl leading-none">{new Date(s.starts_at).getDate()}</b>
-                      <span className="text-[9px] font-semibold text-[#FF8A5B] uppercase">{new Date(s.starts_at).toLocaleDateString('fr-FR', { month: 'short' })}</span>
+                      <span className="text-[9px] font-semibold text-peach uppercase">{new Date(s.starts_at).toLocaleDateString('fr-FR', { month: 'short' })}</span>
                     </span>
                     <span className="min-w-0 flex-1"><b className="block truncate">{s.training.title}</b><span className="text-xs text-muted">{s.training.format_label} · {s.seats_left} place(s)</span></span>
                     <b className="text-sm">{s.effective_price ? fcfa(s.effective_price) : 'Gratuit'}</b>

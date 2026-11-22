@@ -107,13 +107,13 @@ function Profile() {
         </div>
 
         <section id="appareils" className="hero-grad flex flex-col gap-3 rounded-2xl p-6 text-white shadow-[0_30px_60px_-30px_rgba(4,28,92,.7)]">
-          <div className="flex justify-between"><b className="text-[17px]">Appareils connectés</b><span className="text-xs font-semibold text-[#FF8A5B]">{devices.data?.length ?? 0} / 2 MAX</span></div>
+          <div className="flex justify-between"><b className="text-[17px]">Appareils connectés</b><span className="text-xs font-semibold text-peach">{devices.data?.length ?? 0} / 2 MAX</span></div>
           {devices.loading ? <Spinner /> : devices.data?.map((d) => (
             <div key={d.id} className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 p-3.5">
               <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-white text-xs font-bold text-blue-dark">{os(d.label)}</span>
               <div className="min-w-0 flex-1"><b className="block text-sm">{d.label}</b><span className="text-xs opacity-70">{d.current ? 'Cet appareil' : `Vu le ${dateTime(d.last_seen_at)}`}</span></div>
               {d.current ? <span className="h-2 w-2 rounded-full bg-[#4ADE80]" aria-label="Actif" />
-                : <button className="text-[14px] font-semibold text-[#FF8A5B]" onClick={async () => { await del(`/api/auth/devices/${d.id}/`); devices.reload() }}>Déconnecter</button>}
+                : <button className="shrink-0 rounded-full border border-white/45 px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-white/15" onClick={async () => { await del(`/api/auth/devices/${d.id}/`); devices.reload() }}>Déconnecter</button>}
             </div>
           ))}
           <p className="text-xs opacity-75">Un 3ᵉ appareil ferme automatiquement la session la plus ancienne.</p>
@@ -272,7 +272,7 @@ function MyTrainings() {
             <li key={e.id} className="card grid items-center gap-5 p-5 sm:grid-cols-[110px_1fr_auto]">
               <Link to={`/compte/formations/${e.id}`} className="flex h-[110px] flex-col items-center justify-center rounded-[14px] text-white" style={{ background: k % 2 ? 'linear-gradient(135deg,#FF8A3D,#FF6B29)' : 'linear-gradient(135deg,#1560DC,#041C5C)' }}>
                 <b className="text-[38px] leading-none">{String(d.getDate()).padStart(2, '0')}</b>
-                <span className={`text-xs font-semibold uppercase ${k % 2 ? '' : 'text-[#FF8A5B]'}`}>{d.toLocaleDateString('fr-FR', { month: 'short' })}</span>
+                <span className={`text-xs font-semibold uppercase ${k % 2 ? '' : 'text-peach'}`}>{d.toLocaleDateString('fr-FR', { month: 'short' })}</span>
               </Link>
               <div className="min-w-0">
                 <span className={`chip ${tone}`}>{label}</span>

@@ -331,7 +331,7 @@ export function Search() {
                 <li key={t.slug}>
                   <Link to={`/formations/${t.slug}`} className="card flex items-center gap-5 p-5 hover:ring-2 hover:ring-blue-tint">
                     <span className="flex h-20 w-[120px] shrink-0 flex-col items-center justify-center rounded-[10px] text-white" style={{ background: 'linear-gradient(135deg,#1560DC,#041C5C)' }}>
-                      {t.next ? <><b className="text-[26px] leading-none">{new Date(t.next.starts_at).getDate()}</b><span className="text-[12px] font-semibold text-[#FF8A5B] uppercase">{new Date(t.next.starts_at).toLocaleDateString('fr-FR', { month: 'short' })}</span></> : <Icon name="graduation-cap" className="text-2xl" />}
+                      {t.next ? <><b className="text-[26px] leading-none">{new Date(t.next.starts_at).getDate()}</b><span className="text-[12px] font-semibold text-peach uppercase">{new Date(t.next.starts_at).toLocaleDateString('fr-FR', { month: 'short' })}</span></> : <Icon name="graduation-cap" className="text-2xl" />}
                     </span>
                     <div className="min-w-0 flex-1"><span className="text-xs font-semibold text-ok uppercase">Formation · {t.next ? `${t.next.seats_left} places` : t.format}</span><b className="mt-1 block text-lg">{mark(t.title, q)}</b></div>
                     <span className="text-sm font-semibold text-blue">Voir →</span>
