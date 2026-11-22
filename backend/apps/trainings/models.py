@@ -19,6 +19,7 @@ class Training(TimeStampedModel):
     theme = models.CharField(max_length=80, blank=True)
     format = models.CharField(max_length=12, choices=Format.choices, default=Format.ONLINE)
     summary = models.TextField(blank=True)
+    context = models.TextField(blank=True, help_text="Paragraphe(s) de contexte : pourquoi cette formation, d'où elle vient")
     objectives = models.JSONField(default=list, blank=True)
     audience = models.TextField(blank=True)
     program = models.JSONField(default=list, blank=True, help_text="Liste de modules {titre, détail}")

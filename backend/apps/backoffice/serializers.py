@@ -214,7 +214,7 @@ class AdminTrainingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Training
-        fields = ["id", "slug", "title", "theme", "format", "summary", "objectives", "audience", "program",
+        fields = ["id", "slug", "title", "theme", "format", "summary", "context", "objectives", "audience", "program",
                   "duration_label", "trainer", "cover", "price_xof", "faq", "testimonials", "registration_form_id",
                   "is_published", "sessions", "enrollments_count", "created_at", "author_role", "organizer",
                   "registration_mode", "external_registration_url"]

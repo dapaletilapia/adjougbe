@@ -53,7 +53,7 @@ class TrainingDetailSerializer(TrainingCardSerializer):
     registration_form = serializers.SlugRelatedField(slug_field="slug", read_only=True)
 
     class Meta(TrainingCardSerializer.Meta):
-        fields = TrainingCardSerializer.Meta.fields + ["objectives", "audience", "program", "trainer", "faq",
+        fields = TrainingCardSerializer.Meta.fields + ["context", "objectives", "audience", "program", "trainer", "faq",
                                                        "testimonials", "sessions", "registration_form"]
 
     def get_sessions(self, obj):

@@ -186,6 +186,14 @@ export function TrainingDetail() {
               ))}
             </dl>
           )}
+          {t.context?.trim() && (
+            <section aria-labelledby="contexte">
+              <h2 id="contexte" className="text-2xl">Pourquoi cette formation</h2>
+              <div className="mt-4 grid max-w-[720px] gap-4 text-[16.5px] leading-[1.75] text-ink-soft">
+                {t.context.split(/\n\s*\n/).map((para: string, i: number) => <p key={i} className="whitespace-pre-line">{para.trim()}</p>)}
+              </div>
+            </section>
+          )}
           {(t.objectives?.length > 0 || t.audience) && (
             <section className="card grid overflow-hidden md:grid-cols-[1.35fr_1fr]">
               {t.objectives?.length > 0 && (

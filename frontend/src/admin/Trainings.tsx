@@ -40,7 +40,7 @@ export function TrainingsList() {
   )
 }
 
-const EMPTY = { title: '', theme: '', format: 'online', summary: '', objectives: [], audience: '', program: [], duration_label: '', trainer: 'Adjougbe', price_xof: 0, faq: [], testimonials: [], registration_form_id: null, is_published: false, sessions: [], author_role: 'organizer', organizer: '', registration_mode: 'site', external_registration_url: '' }
+const EMPTY = { title: '', theme: '', format: 'online', summary: '', context: '', objectives: [], audience: '', program: [], duration_label: '', trainer: 'Adjougbe', price_xof: 0, faq: [], testimonials: [], registration_form_id: null, is_published: false, sessions: [], author_role: 'organizer', organizer: '', registration_mode: 'site', external_registration_url: '' }
 
 export function TrainingEdit() {
   const { id } = useParams()
@@ -257,6 +257,9 @@ function TrainingForm({ training }: { training: any }) {
         </Field>
       </div>
       <Field label="Présentation"><textarea className="input" value={v.summary} onChange={(e) => ed.set('summary', e.target.value)} /></Field>
+      <Field label="Contexte" hint="Pourquoi cette formation existe, d'où elle vient, ce qu'elle change. Laissez une ligne vide entre deux paragraphes.">
+        <textarea className="input" rows={6} value={v.context ?? ''} onChange={(e) => ed.set('context', e.target.value)} />
+      </Field>
       <Field label="Public cible"><textarea className="input" rows={2} value={v.audience} onChange={(e) => ed.set('audience', e.target.value)} /></Field>
       <div className="grid gap-6 md:grid-cols-2">
         <ListEditor label="Objectifs" items={v.objectives} onChange={(x) => ed.set('objectives', x)} />

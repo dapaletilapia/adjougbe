@@ -104,6 +104,7 @@ WORKS = {
 
 TRAININGS = {
     "ecrire-des-punchlines-qui-claquent": {
+        "context": "Sur WhatsApp, sur Facebook ou en réunion, on dispose de quelques secondes pour être lu. Une phrase courte et juste fait souvent plus qu'un long discours : elle se retient, se partage et donne envie d'en savoir plus.\n\nCet atelier est né des Punchlines, les phrases qu'Adjougbe écrit chaque matin depuis des années. Il y partage sa méthode pas à pas : regarder le quotidien autrement, tailler une idée jusqu'à l'essentiel, puis la tester sur un vrai public. Pas besoin d'être écrivain : il suffit d'avoir quelque chose à dire.",
         "summary": "Un atelier pratique pour apprendre à écrire court, drôle et juste : trouver l'idée, la tailler, la tester. Vous repartez avec vos propres punchlines et une méthode pour en écrire chaque semaine.",
         "objectives": ["Repérer les idées dans le quotidien", "Écrire court et percutant", "Trouver la chute qui reste en tête", "Tester une phrase sur son public"],
         "audience": "Créateurs de contenu, communicants, entrepreneurs, enseignants et toute personne qui veut mieux se faire entendre à l'écrit.",
@@ -120,6 +121,7 @@ TRAININGS = {
         ],
     },
     "atelier-lecture-publique": {
+        "context": "Beaucoup savent écrire un bon texte, mais perdent leurs moyens au moment de le lire devant les autres : la voix tremble, le débit s'accélère, le public décroche. Ce n'est pas une question de talent, c'est une question de technique.\n\nAdjougbe a lu ses textes dans des salles de classe, des librairies et des entreprises. Dans cet atelier en petit groupe, il transmet ce qu'il a appris sur le souffle, le rythme et le regard, avec des exercices concrets et des retours personnalisés pour chacun.",
         "summary": "Lire à voix haute devant un public, sans trembler : souffle, rythme, silences et regard. Un atelier en petit groupe pour gagner en présence, que ce soit pour une lecture, une réunion ou une prise de parole.",
         "objectives": ["Maîtriser son souffle et sa voix", "Faire vivre un texte à l'oral", "Utiliser le silence", "Capter l'attention d'une salle"],
         "audience": "Toute personne amenée à lire ou à parler en public : étudiants, professionnels, responsables associatifs.",
