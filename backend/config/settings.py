@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "apps.trainings",
     "apps.forms",
     "apps.newsletter",
+    "apps.analytics",
     "apps.backoffice",
 ]
 

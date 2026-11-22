@@ -36,7 +36,10 @@ def post_detail(request, slug):
     post = get_object_or_404(Post.objects.published().select_related("category", "author"), slug=slug)
     Post.objects.filter(pk=post.pk).update(view_count=F("view_count") + 1)
     data = PostDetailSerializer(post, context={"request": request}).data
-    related = Post.objects.published().filter(Q(category=post.category) | Q(kind=post.kind)).exclude(pk=post.pk)[:3]
+    # Carrousel de fin d'article : d'abord la même rubrique, complété par les derniers articles.
+    related = list(Post.objects.published().filter(Q(category=post.category) | Q(kind=post.kind)).exclude(pk=post.pk)[:8])
+    if len(related) < 8:
+        related += list(Post.objects.published().exclude(pk__in=[post.pk, *(r.pk for r in related)])[:8 - len(related)])
     data["related"] = PostCardSerializer(related, many=True, context={"request": request}).data
     return Response(data)
 

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
 import { RequireAuth, Spinner } from './components/ui'
 import { AuthProvider, useAuth } from './lib/auth'
@@ -14,7 +14,7 @@ import Home from './pages/Home'
 import Library, { AccessForm } from './pages/Library'
 import { GiftRedeem, PaymentReturn, PaymentSimulation } from './pages/Payment'
 import Shop from './pages/Shop'
-import { CertificateCheck, CmsPage, Contact, Maintenance, NotFound, Search, Unsubscribe } from './pages/Static'
+import { CertificateCheck, CmsPage, Maintenance, NotFound, Search, Unsubscribe } from './pages/Static'
 import Trainings, { EnrollmentTicket, TrainingDetail, TrainingEnroll } from './pages/Trainings'
 import WorkDetail from './pages/WorkDetail'
 
@@ -70,7 +70,8 @@ export default function App() {
                     <Route path="verifier-email" element={<VerifyEmail />} />
                     <Route path="verification-envoyee" element={<VerifySent />} />
                     <Route path="desinscription" element={<Unsubscribe />} />
-                    <Route path="contact" element={<Contact />} />
+                    {/* Page contact masquée pour le moment : l'ancienne adresse renvoie vers À propos. */}
+                    <Route path="contact" element={<Navigate to="/a-propos" replace />} />
                     <Route path="recherche" element={<Search />} />
                     <Route path="a-propos" element={<CmsPage pageKey="a-propos" title="À propos d'Adjougbe" />} />
                     <Route path="cgu" element={<CmsPage pageKey="cgu" title="Conditions générales" />} />

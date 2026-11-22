@@ -11,6 +11,8 @@ export type User = {
   birth_date: string | null
   role: 'reader' | 'admin' | 'editor' | 'accountant' | 'assistant'
   is_staff_role: boolean
+  is_superuser?: boolean
+  deletion_requested_at?: string | null
   email_verified: boolean
   newsletter_consent: boolean
   preferences: string[]

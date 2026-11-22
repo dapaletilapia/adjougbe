@@ -46,7 +46,7 @@ export default function WorkDetail() {
   const minutes = Math.max(1, Math.round((w.sections.length * 2) / 60))
 
   return (
-    <div className="bg-[var(--card)]">
+    <div>
       <div className="container-x pt-8">
         <nav className="text-[14px] text-muted" aria-label="Fil d'Ariane"><Link to="/">Accueil</Link> / <Link to="/boutique">Œuvres</Link> / <span aria-current="page" className="text-ink">{w.title}</span></nav>
         <div className="mt-8 grid gap-12 md:grid-cols-[minmax(220px,300px)_1fr] lg:gap-16">
@@ -106,7 +106,7 @@ export default function WorkDetail() {
 
       {/* Extrait gratuit (maquette 11b) */}
       {freeSections.length > 0 && !w.owned && (
-        <section className="mt-16 bg-paper py-16">
+        <section className="mt-16 border-t border-line py-16">
           <div className="container-x grid gap-10 lg:grid-cols-[1fr_1.1fr]">
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold tracking-[.12em] text-orange"><Icon name="book-open-reader" />EXTRAIT GRATUIT</div>

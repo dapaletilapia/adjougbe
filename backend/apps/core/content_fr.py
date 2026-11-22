@@ -13,7 +13,7 @@ ABOUT_HTML = """
 <h3>Des livres et des formations</h3>
 <p>En parallèle de l'écriture, Adjougbe anime des masterclass et des ateliers sur la prise de parole, l'écriture et le leadership, à Abidjan et en ligne. [Préciser : parcours professionnel, nombre d'années d'expérience, organisations accompagnées.]</p>
 <h3>Presse et invitations</h3>
-<p>Pour une interview, une conférence, une dédicace ou une formation en entreprise, écrivez-nous depuis la page <a href="/contact">Contact</a>. Réponse sous 48 heures, du lundi au vendredi.</p>
+<p>Pour une interview, une conférence, une dédicace ou une formation en entreprise, utilisez le bouton « Inviter Adjougbe » ci-dessous. Réponse sous 48 heures, du lundi au vendredi.</p>
 """
 
 TERMS_HTML = """
@@ -64,7 +64,8 @@ PRIVACY_HTML = """
 <h3>6. Vos droits</h3>
 <p>Vous pouvez à tout moment consulter, corriger, exporter ou supprimer vos données depuis <a href="/compte">Mon espace → Profil</a>, et vous désinscrire de la newsletter en un clic. Pour toute autre demande, écrivez à [adresse e-mail]. Vous pouvez aussi saisir l'ARTCI.</p>
 <h3>7. Cookies</h3>
-<p>Le Site utilise uniquement les cookies nécessaires à son fonctionnement (session de connexion, sécurité). [Mettre à jour si des outils de mesure d'audience sont ajoutés.]</p>
+<p>Le Site utilise uniquement les cookies nécessaires à son fonctionnement (session de connexion, sécurité).</p>
+<p>Pour connaître sa fréquentation, le Site utilise une mesure d'audience interne, sans cookie et sans outil tiers : il compte les pages vues, la provenance (par exemple WhatsApp ou un moteur de recherche) et le type d'appareil. Votre adresse IP n'est jamais enregistrée ; elle sert seulement, le jour même, à calculer une empreinte anonyme qui change chaque jour. Les statistiques produites sont des totaux qui ne permettent pas de vous identifier. Si votre navigateur envoie le signal « Do Not Track », aucune mesure n'est faite.</p>
 """
 
 LEGAL_HTML = """

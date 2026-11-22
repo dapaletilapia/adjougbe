@@ -24,7 +24,7 @@ export function PageHero({ crumbs, eyebrow, title, accent, text, base = 'var(--b
             </span>
           )}
           <h1 className="mt-4 text-[34px] leading-[1.12] font-bold tracking-[-0.02em] [text-shadow:0_10px_40px_rgba(4,28,92,.45)] md:text-[50px]">
-            {title} {accent && <span className="text-orange">{accent}</span>}
+            {title} {accent && <span className="text-peach">{accent}</span>}
           </h1>
           {text && <p className="mt-4 max-w-[620px] text-base leading-[1.65] text-white/88 md:text-[17px]">{text}</p>}
           {children}

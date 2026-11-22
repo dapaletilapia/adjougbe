@@ -55,7 +55,8 @@ export function Login() {
   const { login } = useAuth()
   const nav = useNavigate()
   const [params] = useSearchParams()
-  const next = params.get('suivant') || ''
+  const raw = params.get('suivant') || ''
+  const next = raw === '/' ? '' : raw  // après connexion : l'espace personnel, pas la page d'accueil
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<unknown>(null)
@@ -152,7 +153,7 @@ export function Register() {
           ))}
         </div>
         <div className="relative">
-          <p className="text-[32px] leading-tight font-bold">Votre bibliothèque<br /><span className="text-orange">vous attend.</span></p>
+          <p className="text-[32px] leading-tight font-bold">Votre bibliothèque<br /><span className="text-peach">vous attend.</span></p>
           <div className="mt-5 flex gap-6 text-[14px] opacity-90"><span>✓ Reprise de lecture</span><span>✓ Reçus en ligne</span><span>✓ 2 appareils</span></div>
         </div>
       </GradientBg>
@@ -196,10 +197,6 @@ export function Register() {
                 <span>J'accepte les <Link to="/cgu" className="font-semibold text-blue" target="_blank">CGU</Link> et la <Link to="/confidentialite" className="font-semibold text-blue" target="_blank">politique de confidentialité</Link>.</span>
               </label>
               {fe('accept_terms') && <span className="err">{fe('accept_terms')}</span>}
-              <label className="flex cursor-pointer items-start gap-3 text-[14.5px] leading-relaxed text-ink-soft">
-                <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-orange" checked={f.newsletter_consent} onChange={(e) => set('newsletter_consent', e.target.checked)} />
-                Recevoir la punchline du jour par e-mail.
-              </label>
             </div>
             {err && !Object.keys(err.data).some((k) => ['full_name', 'email', 'password', 'phone', 'accept_terms', 'non_field_errors'].includes(k)) && <ErrorNote error={err} />}
             <button className="btn btn-primary !py-4 text-[16px] shadow-orange" disabled={busy}>{busy ? 'Création…' : 'Créer mon compte'}</button>
@@ -229,7 +226,7 @@ export function VerifySent() {
         <h1 className="mt-7 text-[28px]">Vérifiez votre boîte mail</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-muted">Un lien de confirmation a été envoyé à <b className="text-ink">{email || 'votre adresse'}</b>. Il est valable 3 jours.</p>
         {webmail[domain] ? <a href={webmail[domain]} target="_blank" rel="noopener noreferrer" className="btn btn-blue mt-6 w-full !py-3.5">Ouvrir ma messagerie</a>
-          : <Link to={params.get('suivant') || '/boutique'} className="btn btn-blue mt-6 w-full !py-3.5">Continuer sur le site</Link>}
+          : <Link to={params.get('suivant') || '/bibliotheque'} className="btn btn-blue mt-6 w-full !py-3.5">Accéder à mon espace</Link>}
         <p className="mt-4 text-sm text-muted">Rien reçu ?{' '}
           {wait > 0 ? <b className="text-orange">Renvoyer dans 0:{String(wait).padStart(2, '0')}</b>
             : <button className="font-bold text-orange" onClick={async () => { await post('/api/auth/resend-verification/'); setWait(60) }}>Renvoyer le lien</button>}
@@ -306,7 +303,7 @@ export function VerifyEmail() {
   return (
     <Shell title="Vérification de l'adresse">
       {state === 'idle' && <p>Vérification…</p>}
-      {state === 'ok' && <><p>Adresse confirmée. Vous pouvez acheter et lire.</p><Link to="/boutique" className="btn btn-primary justify-self-start">Voir les livres</Link></>}
+      {state === 'ok' && <><p>Adresse confirmée. Vous pouvez acheter et lire.</p><Link to="/bibliotheque" className="btn btn-primary justify-self-start">Accéder à mon espace</Link></>}
       {state === 'error' && <p>Ce lien est invalide ou a expiré. Demandez-en un nouveau depuis <Link to="/compte" className="link">votre compte</Link>.</p>}
     </Shell>
   )

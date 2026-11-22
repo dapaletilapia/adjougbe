@@ -73,7 +73,7 @@ def escape_json(s: str) -> str:
 def sitemap(request):
     now = timezone.now()
     urls = [("/", "daily"), ("/boutique", "weekly"), ("/blog", "daily"), ("/formations", "weekly"), ("/a-propos", "monthly"),
-            ("/contact", "monthly"), ("/cgu", "yearly"), ("/confidentialite", "yearly"), ("/mentions-legales", "yearly")]
+            ("/cgu", "yearly"), ("/confidentialite", "yearly"), ("/mentions-legales", "yearly")]
     urls += [(f"/livres/{w.slug}", "weekly") for w in Work.objects.filter(status__in=["published", "preorder"])]
     urls += [(f"/blog/{p.slug}", "monthly") for p in Post.objects.published().filter(members_only=False)[:2000]]
     urls += [(f"/formations/{t.slug}", "weekly") for t in Training.objects.filter(is_published=True)]

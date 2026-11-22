@@ -204,26 +204,3 @@ export function StatusChip({ status, label }: { status: string; label: string })
 }
 
 /** Courbe en aire (maquette 15a) avec le point le plus haut mis en avant. */
-export function AreaChart({ data, format, peakLabel }: { data: { label: string; value: number }[]; format: (n: number) => string; peakLabel?: string }) {
-  const max = Math.max(1, ...data.map((d) => d.value))
-  const n = Math.max(1, data.length - 1)
-  const pts = data.map((d, i) => [(i / n) * 600, 185 - (d.value / max) * 160] as const)
-  const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')
-  const peak = data.reduce((m, d, i) => (d.value > data[m].value ? i : m), 0)
-  return (
-    <figure>
-      <svg viewBox="0 0 600 200" preserveAspectRatio="none" className="mt-3.5 h-[210px] w-full" role="img" aria-label={`Ventes, maximum ${format(data[peak]?.value ?? 0)}`}>
-        <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#1560DC" stopOpacity=".35" /><stop offset="1" stopColor="#1560DC" stopOpacity="0" /></linearGradient></defs>
-        <path d={`${line} L600 200 L0 200 Z`} fill="url(#ga)" />
-        <path d={line} fill="none" stroke="#1560DC" strokeWidth="3" vectorEffect="non-scaling-stroke" />
-        {data[peak]?.value > 0 && <circle cx={pts[peak][0]} cy={pts[peak][1]} r="6" fill="#FF6B29" stroke="#fff" strokeWidth="3" />}
-        {data.map((d, i) => <rect key={i} x={pts[i][0] - 300 / n} y="0" width={600 / n} height="200" fill="transparent"><title>{`${d.label} : ${format(d.value)}`}</title></rect>)}
-      </svg>
-      <figcaption className="flex justify-between text-[12px] text-faint">
-        <span>{data[0]?.label}</span>
-        {data[peak]?.value > 0 && <span className="font-semibold text-orange">Pic : {data[peak].label} · {format(data[peak].value)}{peakLabel ? ` · ${peakLabel}` : ''}</span>}
-        <span>{data[data.length - 1]?.label}</span>
-      </figcaption>
-    </figure>
-  )
-}

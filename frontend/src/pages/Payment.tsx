@@ -91,7 +91,7 @@ export function PaymentReturn() {
             ))}
           </div>
         )}
-        <h1 className="mt-10 text-[36px] md:text-[44px]">C'est à vous{first && <>, <span className="text-orange">{first} !</span></>}</h1>
+        <h1 className="mt-10 text-[36px] md:text-[44px]">C'est à vous{first && <>, <span className="text-peach">{first} !</span></>}</h1>
         <p className="mt-3 max-w-[460px] text-base leading-relaxed opacity-90">
           {order.is_gift ? `Le code cadeau a été envoyé à ${order.gift_recipient_email}.` : `Votre achat est dans votre bibliothèque. Le reçu a été envoyé à ${user?.email ?? 'votre adresse'}.`}
         </p>

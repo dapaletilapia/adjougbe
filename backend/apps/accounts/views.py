@@ -13,6 +13,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
 from django.http import JsonResponse
+from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -219,30 +220,30 @@ def export_data(request):
     return resp
 
 
-@api_view(["POST"])
+@api_view(["POST", "DELETE"])
 @permission_classes([IsAuthenticated])
-def delete_account(request):
-    """Droit à l'effacement : anonymise le compte, conserve les pièces comptables."""
+def deletion_request(request):
+    """Le lecteur ne supprime pas son compte lui-même : il en fait la demande, le super administrateur la traite.
+
+    POST : envoyer la demande (mot de passe requis, motif facultatif). DELETE : annuler la demande.
+    """
     u = request.user
-    if not u.check_password(request.data.get("password", "")) and u.has_usable_password():
+    if request.method == "DELETE":
+        u.deletion_requested_at = None
+        u.deletion_reason = ""
+        u.save(update_fields=["deletion_requested_at", "deletion_reason"])
+        return Response({"deletion_requested_at": None})
+    if u.has_usable_password() and not u.check_password(request.data.get("password", "")):
         return Response({"detail": "Mot de passe incorrect."}, status=400)
-    with transaction.atomic():
-        from apps.newsletter.models import Subscriber
-        Subscriber.objects.filter(email=u.email).delete()
-        u.form_responses.all().delete()
-        for dev in u.devices.all():
-            services.close_device(dev)
-        u.email = f"supprime-{u.pk}@anonyme.invalid"
-        u.full_name = "Compte supprimé"
-        u.phone = u.city = ""
-        u.birth_date = None
-        u.preferences = []
-        u.google_sub = ""
-        u.is_active = False
-        u.set_unusable_password()
-        u.save()
-    logout(request)
-    return Response({"ok": True})
+    if u.is_superuser:
+        return Response({"detail": "Le compte du super administrateur ne peut pas être supprimé depuis le site."}, status=400)
+    first = u.deletion_requested_at is None
+    u.deletion_requested_at = u.deletion_requested_at or timezone.now()
+    u.deletion_reason = str(request.data.get("reason", ""))[:500]
+    u.save(update_fields=["deletion_requested_at", "deletion_reason"])
+    if first:
+        services.notify_deletion_request(u)
+    return Response({"deletion_requested_at": u.deletion_requested_at})
 
 
 @api_view(["POST"])

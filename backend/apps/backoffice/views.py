@@ -175,6 +175,18 @@ def dashboard(request):
 
 @api_view(["GET"])
 @permission_classes([BackofficePermission])
+def analytics(request):
+    """Audience et ventes sur 7 j, 30 j, 90 j ou 12 mois, comparées à la période précédente."""
+    from apps.analytics.report import RANGES, build
+    rng = request.query_params.get("range", "30")
+    if rng not in RANGES:
+        rng = "30"
+    finance = has_scope(request.user, "finance") or has_scope(request.user, "orders")
+    return Response(build(rng, finance))
+
+
+@api_view(["GET"])
+@permission_classes([BackofficePermission])
 def badges(request):
     """Compteurs de la barre latérale."""
     return Response({
@@ -368,7 +380,10 @@ class UserViewSet(BO, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.U
 
         spent = Order.objects.filter(user=OuterRef("pk"), status=Order.Status.PAID).values("user") \
             .annotate(t=Sum("total")).values("t")
-        return User.objects.annotate(
+        qs = User.objects.all()
+        if self.request.query_params.get("deletion") == "1":
+            qs = qs.filter(deletion_requested_at__isnull=False, is_active=True).order_by("deletion_requested_at")
+        return qs.annotate(
             orders_count=count_of(Order, status=Order.Status.PAID),
             total_spent=Coalesce(Subquery(spent), 0),
             works_count=count_of(Access, revoked_at__isnull=True),
@@ -416,6 +431,22 @@ class UserViewSet(BO, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.U
                 close_device(d)
         log_action(request, "block" if u.is_blocked else "unblock", u)
         return Response({"is_blocked": u.is_blocked})
+
+    @action(detail=True, methods=["post"])
+    def erase(self, request, pk=None):
+        """Suppression (anonymisation) d'un compte : réservée au super administrateur, jamais sur son propre compte."""
+        from rest_framework.exceptions import PermissionDenied
+
+        from apps.accounts.services import anonymize_user
+        if not request.user.is_superuser:
+            raise PermissionDenied("Seul le super administrateur peut supprimer un compte.")
+        u = self.get_object()
+        if u.pk == request.user.pk or u.is_superuser:
+            return Response({"detail": "Ce compte ne peut pas être supprimé."}, status=400)
+        anonymize_user(u)
+        # Pas de nom ni d'e-mail dans le journal : l'effacement doit être complet.
+        log_action(request, "erase_user", u, f"Compte n° {u.pk} anonymisé")
+        return Response({"ok": True})
 
     @action(detail=True, methods=["post"])
     def grant_access(self, request, pk=None):

@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from apps.core import seo
+from apps.analytics import views as analytics
 from apps.core import views as core
 
 urlpatterns = [
@@ -18,6 +19,7 @@ urlpatterns = [
     path("api/search/", core.search),
     path("api/pages/<slug:key>/", core.page),
     path("api/expertise/", core.expertise),
+    path("api/analytics/hit/", analytics.hit),
     path("api/auth/", include("apps.accounts.urls")),
     path("api/catalog/", include("apps.catalog.urls")),
     path("api/shop/", include("apps.shop.urls")),

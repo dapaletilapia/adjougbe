@@ -13,6 +13,8 @@
   --color-faint: #9a9da6;
   --color-orange: #ff6b29;
   --color-orange-dark: #e2582a;
+  /* Orange éclairci pour le texte posé sur les fonds bleus : l'orange vif n'y est pas assez contrasté. */
+  --color-peach: #ffb38a;
   --color-orange-tint: #ffede4;
   --color-blue: #2f68b7;
   --color-blue-dark: #0a3a9e;
@@ -41,6 +43,12 @@
   --bg: var(--color-paper);
   --fg: var(--color-ink);
   --card: #ffffff;
+  /* Graphes du Studio — palette validée (scripts dataviz) en clair et en sombre */
+  --chart-1: #1560dc;
+  --chart-2: #ff6b29;
+  --chart-3: #0e9f8e;
+  --chart-prev: #a3a9b6;
+  --chart-grid: #eef0f3;
   --shadow-card: 0 20px 40px -30px rgba(4, 28, 92, .45);
   --grad-navy: radial-gradient(300px 160px at 85% 20%, #3fa2ff, transparent 70%), linear-gradient(125deg, #041c5c, #1560dc);
   --grad-side: linear-gradient(180deg, #041c5c, #0a3a9e 70%, #1560dc);
@@ -52,10 +60,18 @@ html[data-theme="dark"] {
   --bg: #0e0f13;
   --fg: #eceef3;
   --card: #181a20;
+  --chart-1: #3b82f6;
+  --chart-2: #e8622a;
+  --chart-3: #14a08e;
+  --chart-prev: #5b606c;
+  --chart-grid: #262a32;
   --color-line: #2b2e36;
   --color-mist: #20232a;
   --color-muted: #a3a6b0;
   --color-blue-tint: #1a2740;
+  /* Fonds « papier » et texte secondaire : versions sombres (sinon bandes claires et texte illisible en mode sombre). */
+  --color-paper: #15171c;
+  --color-ink-soft: #c9ccd4;
 }
 
 /* Règles de base dans une couche : sinon elles l'emporteraient sur les utilitaires Tailwind. */
@@ -105,6 +121,7 @@ h1, h2, h3, h4 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; }
   .card-orange { color: #fff; background: var(--grad-orange); border-radius: var(--radius-lg); box-shadow: 0 20px 40px -24px rgba(255, 107, 41, .8); }
   .hero-grad { background: radial-gradient(700px 420px at 78% 30%, #3fa2ff 0%, rgba(31,120,240,.55) 38%, transparent 72%), linear-gradient(125deg, #041c5c 0%, #0a3a9e 38%, #1560dc 70%, #2a86f2 100%); }
   .kicker { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--color-orange); }
+  .hero-grad .kicker, .card-navy .kicker { color: var(--color-peach); }
   .btn-pill { border-radius: 999px; }
   .shadow-orange { box-shadow: 0 14px 28px -10px rgba(255,107,41,.9); }
   .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-faint); }
@@ -185,3 +202,18 @@ h1, h2, h3, h4 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; }
 /* À propos : premier paragraphe en chapeau, intertitres aérés. */
 .about-prose > p:first-of-type { font-size: 1.2rem; line-height: 1.65; color: var(--fg); }
 .about-prose h3 { margin-top: 2.2rem; }
+
+/* Rail horizontal (filtres, carrousels) : défilement sans barre visible. */
+.scroll-rail { scrollbar-width: none; scroll-snap-type: x proximity; }
+.scroll-rail::-webkit-scrollbar { display: none; }
+.scroll-rail > * { scroll-snap-align: start; }
+
+/* En-tête : entrées du menu et boutons ronds (couche components : les utilitaires hidden/sm:grid gardent la main). */
+@layer components {
+  .nav-pill { position: relative; display: inline-flex; align-items: center; border-radius: 9999px; padding: 10px 16px; transition: color .2s, background-color .2s; }
+  .nav-pill:hover { color: var(--color-blue); background: var(--card); }
+  .nav-pill.is-active { color: var(--color-blue); font-weight: 600; background: var(--card); box-shadow: 0 6px 16px -10px rgba(4, 28, 92, .35); }
+  .nav-pill.is-active::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 14px; height: 2px; border-radius: 2px; background: var(--color-orange); transform: translateX(-50%); }
+  .icon-btn { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 9999px; color: var(--color-ink-soft); font-size: 17px; line-height: 1; transition: color .2s, background-color .2s; }
+  .icon-btn:hover { color: var(--color-blue); background: var(--color-paper); }
+}

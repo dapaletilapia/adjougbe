@@ -28,6 +28,7 @@ router.register("releases", views.ReleaseNoteViewSet, basename="bo-releases")
 
 urlpatterns = [
     path("dashboard/", views.dashboard),
+    path("analytics/", views.analytics),
     path("badges/", views.badges),
     path("finance/export/", views.finance_export),
     path("settings/", views.site_settings),

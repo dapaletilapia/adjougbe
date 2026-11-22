@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShareButtons } from '../components/Share'
+import { ShareButton } from '../components/Share'
 import { PunchlinePopup } from '../components/PunchlinePopup'
 import { Icon, Spinner, Stars, WorkCover } from '../components/ui'
 import { useCart } from '../lib/cart'
@@ -60,7 +60,7 @@ export default function Home() {
             </span>
             <h1 className="mt-5 text-[40px] leading-[1.1] font-bold tracking-[-0.02em] [text-shadow:0_10px_40px_rgba(4,28,92,.45)] md:text-[60px]">
               Osez diriger,<br />
-              <span className="text-orange">écrivez votre{' '}
+              <span className="text-peach">écrivez votre{' '}
                 réussite.
               </span>
             </h1>
@@ -84,7 +84,7 @@ export default function Home() {
             )}
           </div>
         </div>
-        <div className="pointer-events-none absolute right-[-25%] -bottom-[410px] left-[-25%] h-[560px] rounded-[50%] bg-[var(--card)] shadow-[0_-20px_60px_-20px_rgba(4,28,92,.35)]" />
+        <div className="pointer-events-none absolute right-[-25%] -bottom-[410px] left-[-25%] h-[560px] rounded-[50%] bg-[var(--bg)] shadow-[0_-20px_60px_-20px_rgba(4,28,92,.35)]" />
       </section>
 
       {/* Trois services */}
@@ -116,7 +116,7 @@ export default function Home() {
             <div className="kicker relative">Punchline du jour · {dateFr(p.published_at)}</div>
             <blockquote className="relative mt-4 max-w-3xl text-[26px] leading-[1.35] font-semibold md:text-[34px]">« {p.quote || p.excerpt} »</blockquote>
             <div className="relative mt-6 flex flex-wrap items-center gap-4">
-              <ShareButtons dark url={`/blog/${p.slug}`} text={`« ${p.quote} » — Adjougbe`} slug={p.slug} cardUrl={`/api/blog/posts/${p.slug}/card.png`} />
+              <ShareButton dark label="Partager la punchline" url={`/blog/${p.slug}`} text={`« ${p.quote} » — Adjougbe`} slug={p.slug} cardUrl={`/api/blog/posts/${p.slug}/card.png`} />
               <Link to="/blog?kind=punchline" className="text-sm font-semibold text-white/85 underline underline-offset-4">Toutes les punchlines</Link>
             </div>
           </div>

@@ -12,7 +12,7 @@ export function Logo({ light = false, compact = false }: { light?: boolean; comp
       {!compact && (
         <span className="flex flex-col gap-0.5">
           <span className={`text-[21px] leading-none font-bold tracking-[-0.02em] ${light ? 'text-white' : 'text-blue'}`}>Adjougbe</span>
-          <span className="mt-0.5 text-[9px] font-semibold tracking-[.28em] text-orange">POSSUMUS</span>
+          <span className={`mt-0.5 text-[9px] font-semibold tracking-[.28em] ${light ? 'text-peach' : 'text-orange'}`}>POSSUMUS</span>
         </span>
       )}
     </span>

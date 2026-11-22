@@ -30,6 +30,8 @@ async function newPage(width = 1280, { skipPopup = true } = {}) {
   page.on('pageerror', (e) => errors.push(e.message))
   if (skipPopup) await page.evaluateOnNewDocument(() => { try { localStorage.setItem('adj-punchline-vue', new Date().toISOString().slice(0, 10)) } catch { /* */ } })
   await page.setViewport({ width, height: width < 700 ? 844 : 900 })
+  // Navigateur « ordinaire » : la mesure d'audience ignore les robots et Chrome sans interface.
+  await page.setUserAgent(width < 700 ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/131.0 Safari/537.36')
   page.errors = errors
   lastPage = page
   return page
@@ -83,14 +85,30 @@ await test("Menu « À propos » → Domaines d'intervention (ordinateur)", asyn
   check(top < 300, `La page n'a pas défilé jusqu'aux domaines (top=${top})`)
 })
 
-await test('Domaines → « Inviter Adjougbe » pré-remplit le sujet du contact', async () => {
+await test('Page contact masquée : redirection vers À propos, invitation par WhatsApp', async () => {
   const page = await newPage()
-  await go(page, '/a-propos#domaines')
-  await page.waitForSelector('#domaines a[href^="/contact"]')
-  await clickText(page, '#domaines a', 'Inviter Adjougbe')
-  await page.waitForSelector('select')
-  const v = await page.$eval('select', (s) => s.value)
-  check(v === 'Formation en entreprise', `Sujet : « ${v} »`)
+  await go(page, '/contact')
+  await page.waitForFunction(() => location.pathname === '/a-propos', { timeout: 6000 })
+  const nav = await page.$$eval('nav[aria-label="Navigation principale"] a', (l) => l.map((a) => a.getAttribute('href')))
+  check(!nav.includes('/contact'), 'Le menu ne doit plus montrer Contact')
+  await page.waitForSelector('#domaines a', { timeout: 6000 })
+  const href = await page.$$eval('#domaines a', (l) => l.find((a) => a.textContent.includes('Inviter'))?.getAttribute('href') ?? '')
+  check(href.startsWith('https://wa.me/') || href.startsWith('mailto:'), `Lien d'invitation : ${href}`)
+  check(!(await page.$('#nl-email')), 'Le formulaire de newsletter doit avoir disparu')
+})
+
+await test('Article : un seul bouton de partage, pas de commentaires', async () => {
+  const page = await newPage()
+  await go(page, '/blog')
+  await page.waitForSelector('main a[href^="/blog/"]')
+  const href = await page.$$eval('main a[href^="/blog/"]', (l) => l.map((a) => a.getAttribute('href')).find((h) => h !== '/blog/'))
+  await go(page, href)
+  await page.waitForSelector('article h1')
+  const shareNetworks = await page.$$eval('a[href*="facebook.com/sharer"]', (l) => l.length)
+  check(shareNetworks === 0, 'Les réseaux ne doivent apparaître que dans le menu de partage')
+  await clickText(page, 'aside button', 'Partager')
+  await page.waitForSelector('[role=menu] a[href*="wa.me"]', { timeout: 4000 })
+  check(!(await page.$('#commentaires')), 'Les commentaires doivent avoir disparu')
 })
 
 await test("Formations : bandeau « À l'affiche », filtre partenaires, lien vers l'organisateur", async () => {
@@ -140,7 +158,7 @@ await test('Lecteur : inscription à une formation gratuite, jusqu’au billet',
   check(!page.errors.length, page.errors.join(' | '))
 })
 
-await test('Studio : formation chez un organisateur (lien obligatoire) et domaine ajouté', async () => {
+await test('Studio : tableau de bord, formation chez un organisateur, domaine ajouté', async () => {
   const page = await newPage()
   await login(page, 'admin@adjougbe.local', 'Adjougbe-Demo-2026!')
   await page.waitForFunction(() => location.pathname === '/admin/verification', { timeout: 8000 })
@@ -149,6 +167,18 @@ await test('Studio : formation chez un organisateur (lien obligatoire) et domain
   await page.keyboard.type(authenticator.generate(process.env.E2E_OTP_SECRET))
   await clickText(page, 'button', 'Vérifier')
   await page.waitForFunction(() => location.pathname === '/admin', { timeout: 8000 })
+
+  // Tableau de bord : les visites des parcours précédents sont comptées, les graphes répondent au clavier.
+  await page.waitForSelector('svg[aria-label^="Visiteurs uniques"]', { timeout: 8000 })
+  const stats = await page.evaluate(() => fetch('/api/backoffice/analytics/?range=7').then((r) => r.json()))
+  check(stats.kpis.visitors.value >= 1 && stats.top_pages.length >= 3, `Visites non comptées : ${JSON.stringify(stats.kpis.visitors)}`)
+  check(stats.top_pages.every((p) => !p.path.startsWith('/admin')), 'Une page du Studio a été comptée')
+  await page.evaluate(() => document.querySelector('svg[aria-label^="Visiteurs uniques"]').focus())
+  await page.keyboard.press('ArrowLeft')
+  const tip = await page.$eval('svg[aria-label^="Visiteurs uniques"]', (s) => s.parentElement.querySelector('[role=status]')?.innerText ?? '')
+  check(tip.includes('Visiteurs'), 'Pas d’infobulle au clavier sur la courbe')
+  for (const r of ['7 jours', '90 jours', '12 mois']) { await clickText(page, '[role=tab]', r); await sleep(600) }
+  await page.waitForSelector('svg[aria-label^="Visiteurs uniques"]')
 
   await go(page, '/admin/formations/nouvelle')
   await page.waitForSelector('input.input')

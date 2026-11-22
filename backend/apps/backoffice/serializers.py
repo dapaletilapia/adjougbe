@@ -141,8 +141,9 @@ class AdminUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "email", "full_name", "phone", "country", "city", "role", "role_label", "email_verified",
                   "newsletter_consent", "preferences", "is_blocked", "is_active", "otp_enabled", "date_joined",
-                  "last_seen_at", "orders_count", "total_spent", "works_count", "devices_count", "open_alerts"]
-        read_only_fields = ["email", "date_joined", "last_seen_at", "otp_enabled"]
+                  "last_seen_at", "orders_count", "total_spent", "works_count", "devices_count", "open_alerts",
+                  "deletion_requested_at", "deletion_reason"]
+        read_only_fields = ["email", "date_joined", "last_seen_at", "otp_enabled", "deletion_requested_at", "deletion_reason"]
 
 
 class DeviceAdminSerializer(serializers.ModelSerializer):

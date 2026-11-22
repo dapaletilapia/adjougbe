@@ -54,7 +54,7 @@ const KIND_STYLE: Record<string, [string, string]> = {
 }
 
 /** Bannière d'un article : son image, ou un visuel généré aux couleurs de la rubrique (jamais de carte sans visuel). */
-export function PostBanner({ p, size = 'card', className = '' }: { p: any; size?: 'card' | 'lead' | 'hero'; className?: string }) {
+export function PostBanner({ p, size = 'card', className = '', plain = false }: { p: any; size?: 'card' | 'lead' | 'hero'; className?: string; plain?: boolean }) {
   const [bg, icon] = KIND_STYLE[p.kind] ?? KIND_STYLE.article
   if (p.cover) return <img src={p.cover} alt="" className={`h-full w-full object-cover ${className}`} loading={size === 'hero' ? 'eager' : 'lazy'} />
   const quote = p.kind === 'punchline' && p.quote
@@ -62,7 +62,7 @@ export function PostBanner({ p, size = 'card', className = '' }: { p: any; size?
     <div className={`relative flex h-full w-full flex-col justify-end overflow-hidden text-white ${className}`} style={{ background: bg }}>
       <span className="pointer-events-none absolute inset-0 opacity-[.06]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: size === 'card' ? '64px 64px' : '92px 92px' }} />
       <img src="/mark-mono.svg" alt="" className="pointer-events-none absolute -top-8 -right-8 h-40 w-40 opacity-[.1] md:h-56 md:w-56" />
-      {quote ? (
+      {plain ? null : quote ? (
         <p className={`relative p-6 leading-snug font-semibold ${size === 'card' ? 'line-clamp-4 text-[19px]' : 'text-[24px] md:p-10 md:text-[28px]'}`}>« {p.quote} »</p>
       ) : (
         <span className={`relative m-6 grid place-items-center rounded-2xl bg-white/15 backdrop-blur-sm ${size === 'card' ? 'h-12 w-12 text-xl' : 'h-16 w-16 text-2xl md:m-10'}`}><Icon name={icon} /></span>

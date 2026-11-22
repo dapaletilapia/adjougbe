@@ -119,3 +119,38 @@ def send_welcome(user: User):
         f"Bonjour {user.full_name},\n\nBienvenue ! Découvrez la punchline du jour et un extrait offert :\n"
         f"{front('/')}\n\nAdjougbe — Possumus",
     )
+
+
+def anonymize_user(u: User):
+    """Droit à l'effacement : anonymise le compte, conserve les pièces comptables (commandes, factures)."""
+    from django.db import transaction
+
+    from apps.newsletter.models import Subscriber
+    with transaction.atomic():
+        Subscriber.objects.filter(email=u.email).delete()
+        u.form_responses.all().delete()
+        for dev in u.devices.all():
+            close_device(dev)
+        u.email = f"supprime-{u.pk}@anonyme.invalid"
+        u.full_name = "Compte supprimé"
+        u.phone = u.city = ""
+        u.birth_date = None
+        u.preferences = []
+        u.google_sub = ""
+        u.newsletter_consent = False
+        u.is_active = False
+        u.deletion_reason = ""
+        u.set_unusable_password()
+        u.save()
+
+
+def notify_deletion_request(u: User):
+    """Prévient les super administrateurs qu'un lecteur demande la suppression de son compte."""
+    for admin in User.objects.filter(is_superuser=True, is_active=True):
+        try:
+            send(admin.email, "Demande de suppression de compte",
+                 f"{u.full_name} ({u.email}) demande la suppression de son compte.\n"
+                 f"Motif : {u.deletion_reason or 'non précisé'}\n\n"
+                 f"Traiter la demande dans le Studio : {front(f'/admin/utilisateurs/{u.pk}')}")
+        except Exception:  # noqa: BLE001 — l'envoi d'e-mail ne doit pas bloquer la demande
+            pass

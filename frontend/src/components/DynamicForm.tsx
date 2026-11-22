@@ -80,12 +80,7 @@ export function DynamicForm({ form, query = '', submitLabel = 'Envoyer', onDone,
         <span>{form.consent_text} <a href="/confidentialite" className="link" target="_blank">Politique de confidentialité</a></span>
       </label>
       {errors._consent && <span className="err -mt-3">{errors._consent}</span>}
-      {form.newsletter_optin && (
-        <label className="flex items-start gap-3 text-sm">
-          <input type="checkbox" className="mt-1 h-4 w-4 accent-orange" checked={!!values._newsletter} onChange={(e) => set('_newsletter', e.target.checked)} />
-          <span>Recevoir la punchline du jour et les nouveautés par e-mail.</span>
-        </label>
-      )}
+      {/* Case « newsletter » retirée : la newsletter n'est plus proposée sur le site. */}
       <ErrorNote error={error} />
       <button className="btn btn-primary !py-4 shadow-orange" disabled={busy}>{busy ? 'Envoi…' : submitLabel}</button>
     </form>

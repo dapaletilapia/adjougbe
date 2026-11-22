@@ -11,6 +11,8 @@ import { AdminPage, Confirm, FilterSelect, ListToolbar, Pager, Panel, StatusChip
 const ROLES: [string, string][] = [['reader', 'Lecteur'], ['admin', 'Administrateur'], ['editor', 'Éditeur / community manager'], ['accountant', 'Comptable'], ['assistant', 'Assistant']]
 
 function userStatus(u: any): [string, string] {
+  if (!u.is_active) return ['Supprimé', 'chip']
+  if (u.deletion_requested_at) return ['Suppression demandée', 'chip-danger']
   if (u.is_blocked) return ['Bloqué', 'chip-danger']
   if (u.open_alerts) return ['⚠ Alerte', 'chip-orange']
   if (!u.email_verified) return ['E-mail non vérifié', 'chip-warn']
@@ -30,6 +32,7 @@ export function UsersList() {
         <FilterSelect list={list} name="role" label="Tous les rôles" options={ROLES} />
         <FilterSelect list={list} name="is_blocked" label="Tous les comptes" options={[['true', 'Bloqués'], ['false', 'Actifs']]} />
         <FilterSelect list={list} name="newsletter_consent" label="Newsletter" options={[['true', 'Abonnés'], ['false', 'Non abonnés']]} />
+        <FilterSelect list={list} name="deletion" label="Demandes de suppression" options={[['1', 'Suppression demandée']]} />
       </div>
       <TableWrap loading={list.loading} error={list.error} empty={!list.data?.results.length}>
         <table className="table">
@@ -109,7 +112,19 @@ export function UserDetail() {
         {u.is_blocked
           ? <button className="btn btn-ghost !min-h-[42px]" onClick={() => act(() => post(`/api/backoffice/users/${u.id}/block/`, { blocked: false }), 'Compte débloqué.')}>Débloquer</button>
           : <Confirm text="Bloquer ce compte ?" danger onConfirm={() => act(() => post(`/api/backoffice/users/${u.id}/block/`, { blocked: true }), 'Compte bloqué et déconnecté.')}><button className="btn btn-danger !min-h-[42px]">Bloquer</button></Confirm>}
+        {me?.is_superuser && u.is_active && u.id !== me.id && (
+          <Confirm text="Supprimer ce compte ? Les données personnelles sont effacées, les factures conservées de façon anonyme. Action irréversible." danger
+            onConfirm={() => act(() => post(`/api/backoffice/users/${u.id}/erase/`), 'Compte supprimé.')}>
+            <button className="btn btn-danger !min-h-[42px]">Supprimer le compte</button>
+          </Confirm>
+        )}
       </>}>
+      {u.deletion_requested_at && u.is_active && (
+        <div className="rounded-xl border-[1.5px] border-[#FDBA9B] bg-orange-tint/40 px-5 py-4 text-[14.5px]">
+          <b>Suppression demandée le {shortDate(u.deletion_requested_at)}.</b>{u.deletion_reason && <> Motif : « {u.deletion_reason} »</>}
+          <span className="block text-muted">{me?.is_superuser ? 'Vous pouvez supprimer le compte avec le bouton « Supprimer le compte ».' : 'Seul le super administrateur peut supprimer le compte.'}</span>
+        </div>
+      )}
       <ErrorNote error={error} />
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Achats">

@@ -377,7 +377,7 @@ const ACTION_LABEL: Record<string, string> = {
   revoke_access: 'Accès retiré', close_device: 'Session d’appareil fermée', update_user: 'Utilisateur modifié', refund: 'Remboursement',
   mark_paid: 'Paiement validé manuellement', resend_receipt: 'Reçu renvoyé', create: 'Création', update: 'Modification', delete: 'Suppression',
   import_sections: 'Import de contenu', new_edition: 'Nouvelle édition', moderate_comments: 'Modération de commentaires',
-  send_campaign: 'Newsletter envoyée', update_settings: 'Paramètres modifiés', email_participants: 'E-mail aux inscrits', update_enrollment: 'Inscription modifiée',
+  send_campaign: 'Newsletter envoyée', erase_user: 'Compte supprimé', update_settings: 'Paramètres modifiés', email_participants: 'E-mail aux inscrits', update_enrollment: 'Inscription modifiée',
 }
 const TYPE_LABEL: Record<string, string> = {
   Work: 'œuvre', Section: 'section', Post: 'article', Order: 'commande', User: '', Training: 'formation', TrainingSession: 'session',

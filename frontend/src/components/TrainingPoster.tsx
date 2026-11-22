@@ -19,7 +19,7 @@ export function TrainingPoster({ t, className = '', eager = false }: { t: any; c
     <div className={`hero-grad relative flex flex-col justify-end overflow-hidden p-5 text-white ${className}`}>
       <span className="pointer-events-none absolute inset-0 opacity-[.06]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '64px 64px' }} />
       <img src="/mark-mono.svg" alt="" className="pointer-events-none absolute -top-6 -right-6 h-36 w-36 opacity-[.12]" />
-      {t.theme && <span className="relative mb-1.5 text-[13px] font-semibold text-orange">{t.theme}</span>}
+      {t.theme && <span className="relative mb-1.5 text-[13px] font-semibold text-peach">{t.theme}</span>}
       <b className="relative line-clamp-3 text-[20px] leading-snug">{t.title}</b>
     </div>
   )

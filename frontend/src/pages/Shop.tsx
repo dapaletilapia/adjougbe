@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { FilterBar } from '../components/FilterBar'
 import { PageHero } from '../components/PageHero'
-import { Icon, Spinner, WorkCover } from '../components/ui'
+import { Spinner, WorkCover } from '../components/ui'
 import { useCart } from '../lib/cart'
 import { fcfa } from '../lib/format'
 import { useApi, useTitle } from '../lib/hooks'
@@ -24,16 +25,10 @@ export default function Shop() {
     <>
       <PageHero crumbs={[['Accueil', '/'], ['Œuvres']]} eyebrow="NOS ŒUVRES" title="Des livres pour" accent="se relever et diriger."
         text="Lecture en ligne protégée, extrait gratuit sans compte, accès immédiat après paiement." />
-      <div className="container-x relative z-[1] -mt-2 flex flex-wrap items-center gap-2.5">
-        {[['all', `Tout · ${count(() => true)}`], ['paid', `Payantes · ${count((w) => w.access_mode === 'paid')}`], ['free', `Offertes · ${count((w) => w.access_mode !== 'paid')}`]].map(([v, l]) => (
-          <button key={v} onClick={() => setFilter(v)} aria-pressed={filter === v}
-            className={`rounded-full px-[18px] py-2.5 text-sm font-medium ${filter === v ? 'bg-ink text-white' : 'bg-[var(--card)] shadow-[0_6px_16px_-12px_rgba(4,28,92,.4)]'}`}>{l}</button>
-        ))}
-        <label className="relative ml-auto w-full max-w-[320px]">
-          <span className="sr-only">Rechercher dans les œuvres</span>
-          <Icon name="search" className="absolute top-1/2 left-4 -translate-y-1/2 text-faint" />
-          <input className="input !rounded-full !bg-[var(--card)] !pl-11 shadow-[0_6px_16px_-12px_rgba(4,28,92,.4)]" placeholder="Rechercher dans les œuvres…" value={q} onChange={(e) => setQ(e.target.value)} />
-        </label>
+      <div className="container-x relative z-[1] -mt-2">
+        <FilterBar label="Filtrer les œuvres" value={filter} onChange={setFilter}
+          options={[{ value: 'all', label: 'Tout', count: count(() => true) }, { value: 'paid', label: 'Payantes', count: count((w) => w.access_mode === 'paid') }, { value: 'free', label: 'Offertes', count: count((w) => w.access_mode !== 'paid') }]}
+          search={{ id: 'shop-q', value: q, onChange: setQ, placeholder: 'Rechercher une œuvre' }} />
       </div>
 
       <section className="container-x mt-10 grid gap-7 md:grid-cols-2 xl:grid-cols-3">

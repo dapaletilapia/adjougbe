@@ -1,4 +1,4 @@
-const nf = new Intl.NumberFormat('fr-FR')
+export const nf = new Intl.NumberFormat('fr-FR')
 export const fcfa = (n: number | null | undefined) => `${nf.format(n ?? 0)} FCFA`
 export const dateFr = (d?: string | null, withTime = false) =>
   d
@@ -40,3 +40,7 @@ export function formatPhone(raw: string) {
   const ci = d.match(/^(225)(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/)
   return ci ? `+${ci.slice(1).join(' ')}` : `+${d}`
 }
+
+/** 1 284 · 12,9 k · 4,2 M — pour les axes et les tuiles des graphes. */
+export const compact = (n: number) =>
+  Math.abs(n) < 10_000 ? nf.format(Math.round(n)) : new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 }).format(n)

@@ -18,7 +18,7 @@ urlpatterns = [
     path("devices/", views.devices),
     path("devices/<int:pk>/", views.device_delete),
     path("export/", views.export_data),
-    path("delete/", views.delete_account),
+    path("deletion-request/", views.deletion_request),
     path("otp/setup/", views.otp_setup),
     path("otp/verify/", views.otp_verify),
 ]

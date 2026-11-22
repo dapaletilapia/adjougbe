@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { dateFr } from '../lib/format'
-import { ShareButtons } from './Share'
+import { ShareButton } from './Share'
 import markWhite from '../assets/mark-white.svg'
 
 const KEY = 'adj-punchline-vue'
@@ -44,7 +44,7 @@ export function PunchlinePopup({ p }: { p: { slug: string; quote: string; excerp
         <div className="pdj-book grid overflow-hidden rounded-[14px] shadow-[0_50px_100px_-30px_rgba(0,0,0,.6)] md:grid-cols-[.8fr_1.2fr]">
           <div className="pdj-cover hero-grad relative flex flex-col justify-between gap-8 p-7 text-white md:p-9">
             <span className="pointer-events-none absolute inset-0 opacity-[.06]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '72px 72px' }} />
-            <span className="relative text-[13px] font-semibold text-orange">Punchline du jour</span>
+            <span className="relative text-[13px] font-semibold text-peach">Punchline du jour</span>
             <img src={markWhite} alt="" className="relative mx-auto hidden h-24 w-24 md:block" />
             <span className="relative">
               <b id="pdj-titre" className="block text-[22px] leading-tight md:text-[26px]">Votre phrase<br className="hidden md:block" /> pour aujourd'hui</b>
@@ -63,12 +63,12 @@ export function PunchlinePopup({ p }: { p: { slug: string; quote: string; excerp
         </div>
 
         {/* Partage */}
-        <div className="mt-4 flex flex-col gap-4 rounded-[14px] bg-white p-5 shadow-xl md:flex-row md:items-center md:justify-between md:px-7">
+        <div className="mt-4 flex flex-col items-start gap-4 rounded-[14px] bg-white p-5 shadow-xl md:flex-row md:items-center md:justify-between md:px-7">
           <div>
             <b className="block text-[16px]">Elle peut aider quelqu'un aujourd'hui.</b>
-            <span className="text-[14px] text-muted">Partagez-la sur WhatsApp, Facebook, X, Telegram, LinkedIn ou en story Instagram.</span>
+            <span className="text-[14px] text-muted">Envoyez-la à quelqu'un, ou publiez-la en story.</span>
           </div>
-          <ShareButtons label={false} url={`/blog/${p.slug}`} text={`« ${quote} » — Adjougbe`} slug={p.slug} cardUrl={`/api/blog/posts/${p.slug}/card.png`} />
+          <ShareButton up align="right" url={`/blog/${p.slug}`} text={`« ${quote} » — Adjougbe`} slug={p.slug} cardUrl={`/api/blog/posts/${p.slug}/card.png`} />
         </div>
         <p className="mt-4 text-center">
           <Link to="/blog?kind=punchline" onClick={() => setOpen(false)} className="text-[14px] font-semibold text-white underline underline-offset-4">Voir toutes les punchlines</Link>

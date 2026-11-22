@@ -61,6 +61,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False, help_text="Accès à l'admin Django technique")
     date_joined = models.DateTimeField(default=timezone.now)
     last_seen_at = models.DateTimeField(null=True, blank=True)
+    # Suppression de compte : le lecteur la demande, seul le super administrateur l'exécute.
+    deletion_requested_at = models.DateTimeField(null=True, blank=True)
+    deletion_reason = models.CharField(max_length=500, blank=True)
 
     objects = UserManager()
 

@@ -48,6 +48,7 @@ function Profile() {
   const [pwErr, setPwErr] = useState<unknown>(null)
   const [delOpen, setDelOpen] = useState(false)
   const [delPw, setDelPw] = useState('')
+  const [delReason, setDelReason] = useState('')
   const [delErr, setDelErr] = useState<unknown>(null)
   if (!user) return null
   const set = (k: string, v: unknown) => setF((s) => ({ ...s, [k]: v }))
@@ -96,11 +97,13 @@ function Profile() {
               return <button key={p.value} type="button" aria-pressed={on} onClick={() => togglePref(p.value)} className={`rounded-full px-3.5 py-2 ${on ? 'bg-blue text-white' : 'bg-[#F2F3F5]'}`}>{on && '✓ '}{p.label}</button>
             })}
           </div>
-          <div className="mt-auto flex items-center justify-between gap-3 rounded-xl bg-paper p-3.5">
-            <span><b className="block text-sm">Punchline du jour par e-mail</b><span className="text-xs text-muted">{user.newsletter_consent ? 'Abonnement actif · désinscription en un clic' : 'Recevez la newsletter d’Adjougbe'}</span></span>
-            <button type="button" role="switch" aria-checked={user.newsletter_consent} className="toggle aria-checked:!bg-blue" aria-label="Newsletter"
-              onClick={() => save({ newsletter_consent: !user.newsletter_consent }, user.newsletter_consent ? 'Désinscription enregistrée.' : 'Abonnement enregistré.')} />
-          </div>
+          {/* Newsletter retirée du site : seuls les abonnés existants gardent de quoi se désinscrire. */}
+          {user.newsletter_consent && (
+            <div className="mt-auto flex items-center justify-between gap-3 rounded-xl bg-paper p-3.5">
+              <span><b className="block text-sm">Punchline du jour par e-mail</b><span className="text-xs text-muted">Abonnement actif · désinscription en un clic</span></span>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => save({ newsletter_consent: false }, 'Désinscription enregistrée.')}>Se désinscrire</button>
+            </div>
+          )}
         </div>
 
         <section id="appareils" className="hero-grad flex flex-col gap-3 rounded-2xl p-6 text-white shadow-[0_30px_60px_-30px_rgba(4,28,92,.7)]">
@@ -131,18 +134,33 @@ function Profile() {
             </form>
           )}
           <button className="rounded-[10px] bg-paper px-3.5 py-3 text-left font-medium" onClick={() => download('/api/auth/export/', 'mes-donnees-adjougbe.json')}>Exporter mes données</button>
-          {!delOpen ? (
-            <button className="rounded-[10px] border-[1.5px] border-[#FDBA9B] px-3.5 py-3 text-left font-semibold text-[#C2410C]" onClick={() => setDelOpen(true)}>Supprimer mon compte</button>
-          ) : (
-            <div className="grid gap-2.5 rounded-xl border-[1.5px] border-[#FDBA9B] p-4">
-              <p className="text-sm"><b>La suppression est définitive.</b> Vous perdez l'accès à vos livres. Les factures sont conservées de façon anonyme pour la comptabilité.</p>
-              <Field label="Confirmez avec votre mot de passe"><input className="input" type="password" value={delPw} onChange={(e) => setDelPw(e.target.value)} /></Field>
-              <ErrorNote error={delErr} />
-              <div className="flex gap-2">
-                <button className="btn btn-danger btn-sm" onClick={async () => { try { await post('/api/auth/delete/', { password: delPw }); setUser(null); nav('/') } catch (err) { setDelErr(err) } }}>Supprimer définitivement</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => setDelOpen(false)}>Annuler</button>
-              </div>
+          {/* Suppression : le lecteur envoie une demande, le super administrateur la traite. */}
+          {user.deletion_requested_at ? (
+            <div className="grid gap-2.5 rounded-xl border-[1.5px] border-[#FDBA9B] bg-orange-tint/40 p-4 text-sm">
+              <p><b>Demande de suppression envoyée</b> le {shortDate(user.deletion_requested_at)}. L'équipe la traite sous 30 jours ; vous gardez l'accès à votre compte d'ici là.</p>
+              <button className="btn btn-ghost btn-sm justify-self-start" onClick={async () => {
+                try { await del('/api/auth/deletion-request/'); setUser({ ...user, deletion_requested_at: null }); toast('Demande annulée.') } catch (err) { setDelErr(err) }
+              }}>Annuler la demande</button>
             </div>
+          ) : !delOpen ? (
+            <button className="rounded-[10px] border-[1.5px] border-[#FDBA9B] px-3.5 py-3 text-left font-semibold text-[#C2410C]" onClick={() => setDelOpen(true)}>Demander la suppression de mon compte</button>
+          ) : (
+            <form className="grid gap-2.5 rounded-xl border-[1.5px] border-[#FDBA9B] p-4" onSubmit={async (e) => {
+              e.preventDefault()
+              try {
+                const r = await post('/api/auth/deletion-request/', { password: delPw, reason: delReason })
+                setUser({ ...user, deletion_requested_at: r.deletion_requested_at }); setDelOpen(false); setDelPw(''); toast('Demande de suppression envoyée.')
+              } catch (err) { setDelErr(err) }
+            }}>
+              <p className="text-sm">Votre demande est transmise à l'administrateur, qui supprime le compte. Vous perdrez alors l'accès à vos livres ; les factures sont conservées de façon anonyme pour la comptabilité.</p>
+              <Field label="Motif (facultatif)"><textarea className="input" rows={2} maxLength={500} value={delReason} onChange={(e) => setDelReason(e.target.value)} /></Field>
+              <Field label="Confirmez avec votre mot de passe"><input className="input" type="password" autoComplete="current-password" value={delPw} onChange={(e) => setDelPw(e.target.value)} /></Field>
+              <ErrorNote error={delErr} />
+              <div className="flex flex-wrap gap-2">
+                <button className="btn btn-danger btn-sm">Envoyer la demande</button>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setDelOpen(false)}>Annuler</button>
+              </div>
+            </form>
           )}
           <button className="mt-auto text-left text-sm text-muted underline" onClick={async () => { await logout(); nav('/') }}>Se déconnecter</button>
         </section>

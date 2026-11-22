@@ -15,8 +15,10 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id", "email", "full_name", "phone", "country", "city", "birth_date", "role", "is_staff_role",
             "email_verified", "newsletter_consent", "preferences", "otp_enabled", "date_joined",
+            "is_superuser", "deletion_requested_at",
         ]
-        read_only_fields = ["id", "email", "role", "email_verified", "otp_enabled", "date_joined"]
+        read_only_fields = ["id", "email", "role", "email_verified", "otp_enabled", "date_joined",
+                            "is_superuser", "deletion_requested_at"]
 
     def validate_preferences(self, value):
         return [v for v in value if v in PREFERENCE_CHOICES]

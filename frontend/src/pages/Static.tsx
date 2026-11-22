@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { DynamicForm } from '../components/DynamicForm'
+import { FilterBar } from '../components/FilterBar'
 import { PageHero } from '../components/PageHero'
 import { Icon, Spinner, WorkCover } from '../components/ui'
 import { post } from '../lib/api'
@@ -58,6 +59,16 @@ const SEMIO: [string, string, string][] = [
   ['users', 'L\u2019amitié', 'Solidarité et relations humaines.'],
 ]
 
+/** « Inviter Adjougbe » : la page contact étant masquée, la demande part sur WhatsApp (ou par e-mail à défaut). */
+function InviteLink({ className }: { className: string }) {
+  const { data } = useSettings<{ contact_email: string; whatsapp_number: string }>()
+  const msg = "Bonjour, je souhaite inviter Adjougbe pour une formation ou une intervention."
+  const href = data?.whatsapp_number ? `https://wa.me/${data.whatsapp_number}?text=${encodeURIComponent(msg)}`
+    : data?.contact_email ? `mailto:${data.contact_email}?subject=${encodeURIComponent('Invitation')}&body=${encodeURIComponent(msg)}` : ''
+  if (!href) return null
+  return <a href={href} target="_blank" rel="noopener noreferrer" className={className}>Inviter Adjougbe</a>
+}
+
 /** Domaines de formation et d'intervention, gérés dans Studio → Paramètres → Pages. */
 function Expertise() {
   const { data, loading } = useApi<{ id: number; title: string; description: string; icon: string }[]>('/api/expertise/')
@@ -70,7 +81,7 @@ function Expertise() {
           <h2 id="domaines-titre" className="text-[28px] leading-tight md:text-[32px]">Domaines d'intervention</h2>
           <p className="mt-3 text-[15.5px] leading-relaxed text-muted">Les sujets sur lesquels Adjougbe forme, anime des ateliers et intervient en conférence : pour ses propres formations comme pour celles d'écoles, d'entreprises et d'associations.</p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link to="/contact?objet=Formation%20en%20entreprise" className="btn btn-primary shadow-orange">Inviter Adjougbe</Link>
+            <InviteLink className="btn btn-primary shadow-orange" />
             <Link to="/formations" className="btn btn-ghost">Voir les formations</Link>
           </div>
         </div>
@@ -118,7 +129,7 @@ function About({ html, loading }: { html?: string; loading: boolean }) {
         <div className="max-w-[680px]">
           <h2 className="text-[28px] md:text-[32px]">Son histoire</h2>
           {loading ? <Spinner /> : <div className="prose-adj about-prose mt-5" dangerouslySetInnerHTML={{ __html: (html ?? '').replace(/^<h2>[^<]*<\/h2>/, '') }} />}
-          <Link to="/contact" className="btn btn-blue mt-8">Inviter Adjougbe</Link>
+          <InviteLink className="btn btn-blue mt-8" />
         </div>
       </section>
       {!loading && <Expertise />}
@@ -235,7 +246,7 @@ export function NotFound() {
   return (
     <div className="hero-grad relative flex min-h-[calc(100vh-120px)] flex-col items-center justify-center overflow-hidden px-6 py-16 text-center text-white">
       <div className="pointer-events-none absolute inset-0 opacity-[.045]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '92px 92px' }} />
-      <div className="relative text-[110px] leading-none font-extrabold tracking-[-0.04em] [text-shadow:0_20px_60px_rgba(4,28,92,.6)] md:text-[160px]">4<span className="text-orange">0</span>4</div>
+      <div className="relative text-[110px] leading-none font-extrabold tracking-[-0.04em] [text-shadow:0_20px_60px_rgba(4,28,92,.6)] md:text-[160px]">4<span className="text-peach">0</span>4</div>
       <h1 className="relative mt-3 text-[26px] md:text-[28px]">Cette page a été raturée.</h1>
       <p className="relative mt-2 opacity-85">Le crayon a une gomme : revenons à l'essentiel.</p>
       <div className="relative mt-8 flex flex-wrap justify-center gap-3">
@@ -294,11 +305,8 @@ export function Search() {
       </section>
       {q && (
         <div className="container-x relative z-[1]">
-          <div className="flex flex-wrap gap-2.5">
-            {[['all', `Tout · ${n}`], ['works', `Œuvres · ${data?.works.length ?? 0}`], ['posts', `Articles · ${data?.posts.length ?? 0}`], ['trainings', `Formations · ${data?.trainings.length ?? 0}`]].map(([k, l]) => (
-              <button key={k} onClick={() => setTab(k)} aria-pressed={tab === k} className={`rounded-full px-[18px] py-2.5 text-sm ${tab === k ? 'bg-ink font-semibold text-white' : 'bg-[var(--card)]'}`}>{l}</button>
-            ))}
-          </div>
+          <FilterBar label="Type de résultat" value={tab} onChange={setTab}
+            options={[{ value: 'all', label: 'Tout', count: n }, { value: 'works', label: 'Œuvres', count: data?.works.length ?? 0 }, { value: 'posts', label: 'Articles', count: data?.posts.length ?? 0 }, { value: 'trainings', label: 'Formations', count: data?.trainings.length ?? 0 }]} />
           {loading ? <Spinner /> : !n ? <p className="card mt-7 p-8 text-muted">Aucun résultat pour « {q} ». Essayez un autre mot.</p> : (
             <ul className="mt-7 grid gap-3.5">
               {show('works') && data.works.map((w: any) => (

@@ -471,3 +471,108 @@ class ExternalTrainingTests(BackofficeTests):
         self.login()
         self.assertEqual(self.client.post("/api/backoffice/expertise/", {"title": "Y"},
                                           content_type="application/json").status_code, 403)
+
+
+class AnalyticsTests(BackofficeTests):
+    UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile/15E148"
+
+    def _hit(self, path, ua=UA, ref="", ip="41.66.1.1"):
+        return self.client.post("/api/analytics/hit/", {"path": path, "referrer": ref}, content_type="application/json",
+                                HTTP_USER_AGENT=ua, REMOTE_ADDR=ip)
+
+    def test_hits_are_counted_without_cookies_or_junk(self):
+        from apps.analytics.models import DailyVisitor, PageView
+        from apps.blog.models import Post
+        Post.objects.create(title="Rater", slug="rater-pour-mieux-ecrire", body="<p>x</p>")
+        self.assertEqual(self._hit("/", ref="https://l.wa.me/x").status_code, 204)
+        self._hit("/blog/rater-pour-mieux-ecrire")
+        self._hit("/", ip="41.66.1.2", ua="Mozilla/5.0 (Windows NT 10.0) Chrome/130")
+        self._hit("/", ua="facebookexternalhit/1.1")          # robot
+        self._hit("/admin/commandes")                         # page privée
+        self._hit("/n-importe-quoi/<script>")                 # adresse inventée
+        self._hit("/blog/article-qui-n-existe-pas")           # contenu inexistant : pas de ligne en base
+        r = self.client.post("/api/analytics/hit/", [1, 2], content_type="application/json", HTTP_USER_AGENT=self.UA)
+        self.assertEqual(r.status_code, 204)                  # corps inattendu : ignoré, pas d'erreur
+        self._hit("/", ref="https://evil.example", ua="")     # pas de navigateur
+        self.assertEqual(PageView.objects.get(path="/").views, 2)
+        self.assertEqual(PageView.objects.count(), 2)
+        self.assertFalse(PageView.objects.filter(path__contains="n-existe-pas").exists())
+        v = DailyVisitor.objects.order_by("id")
+        self.assertEqual(v.count(), 2)
+        self.assertEqual((v[0].source, v[0].device, v[0].pages, v[0].landing), ("whatsapp", "mobile", 2, "/"))
+        self.assertEqual(v[1].device, "desktop")
+        self.assertNotIn("41.66", "".join(x.key for x in v))
+        self.assertNotIn("Set-Cookie", str(self._hit("/").headers))
+
+    def test_analytics_report_and_finance_scope(self):
+        self._hit("/")
+        self._otp_login()
+        for rng in ("7", "30", "90", "365"):
+            d = self.client.get(f"/api/backoffice/analytics/?range={rng}").json()
+            self.assertEqual(len(d["series"]), 12 if rng == "365" else int(rng))
+            self.assertEqual(len(d["previous"]), len(d["series"]))
+        self.assertEqual(d["kpis"]["visitors"]["value"], 1)
+        self.assertIn("revenue", d["kpis"])
+        self.assertEqual(d["sources"][0]["key"], "direct")
+        self.assertEqual(d["top_pages"][0]["label"], "Accueil")
+        editor = User.objects.create_user("ed@example.com", "Editeur-solide-2026", role=User.Role.EDITOR,
+                                          email_verified=True)
+        self.client.logout()
+        self.login(email="ed@example.com", password="Editeur-solide-2026")
+        secret = self.client.post("/api/auth/otp/setup/").json()["secret"]
+        self.client.post("/api/auth/otp/verify/", {"code": pyotp.TOTP(secret).now()}, content_type="application/json")
+        d = self.client.get("/api/backoffice/analytics/").json()
+        self.assertNotIn("revenue", d["kpis"])
+        self.assertNotIn("revenue", d["series"][0])
+        self.assertNotIn("top_products", d)
+
+
+class AccountDeletionTests(BackofficeTests):
+    """Le lecteur demande la suppression ; seul le super administrateur supprime."""
+
+    def test_reader_requests_then_superadmin_erases(self):
+        from django.test import Client
+        self.login()
+        self.assertEqual(self.client.post("/api/auth/delete/").status_code, 404)  # plus de suppression directe
+        r = self.client.post("/api/auth/deletion-request/", {"password": "mauvais"}, content_type="application/json")
+        self.assertEqual(r.status_code, 400)
+        r = self.client.post("/api/auth/deletion-request/", {"password": "Motdepasse-solide-1", "reason": "Je pars"},
+                             content_type="application/json")
+        self.assertEqual(r.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertIsNotNone(self.user.deletion_requested_at)
+        self.assertEqual(len(mail.outbox), 1)  # le super administrateur est prévenu
+        self.assertEqual(self.client.get("/api/auth/me/").json()["user"]["deletion_requested_at"] is not None, True)
+
+        # Un administrateur non super administrateur ne peut pas supprimer.
+        staff = User.objects.create_user("adm2@example.com", "Staff-solide-2026", full_name="Adm", role=User.Role.ADMIN)
+        c = Client()
+        c.get("/api/auth/csrf/")
+        self.login(c, "adm2@example.com", "Staff-solide-2026")
+        secret = c.post("/api/auth/otp/setup/").json()["secret"]
+        c.post("/api/auth/otp/verify/", {"code": pyotp.TOTP(secret).now()}, content_type="application/json")
+        self.assertEqual(c.post(f"/api/backoffice/users/{self.user.pk}/erase/").status_code, 403)
+        self.assertIsNotNone(staff.pk)
+
+        su = Client()
+        su.get("/api/auth/csrf/")
+        self.login(su, "admin@example.com", "Admin-solide-2026")
+        secret = su.post("/api/auth/otp/setup/").json()["secret"]
+        su.post("/api/auth/otp/verify/", {"code": pyotp.TOTP(secret).now()}, content_type="application/json")
+        listed = su.get("/api/backoffice/users/?deletion=1").json()["results"]
+        self.assertEqual([u["id"] for u in listed], [self.user.pk])
+        self.assertEqual(su.post(f"/api/backoffice/users/{self.admin.pk}/erase/").status_code, 400)
+        self.assertEqual(su.post(f"/api/backoffice/users/{self.user.pk}/erase/").status_code, 200)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+        self.assertEqual(self.user.full_name, "Compte supprimé")
+        from apps.core.models import AuditLog
+        self.assertFalse(AuditLog.objects.filter(summary__contains="awa@example.com").exists())  # effacement complet
+
+    def test_reader_can_cancel_request(self):
+        self.login()
+        self.client.post("/api/auth/deletion-request/", {"password": "Motdepasse-solide-1"}, content_type="application/json")
+        self.client.delete("/api/auth/deletion-request/")
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.deletion_requested_at)

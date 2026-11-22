@@ -3,30 +3,58 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Icon, Spinner } from '../components/ui'
 import { download, post } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { PAYMENT_METHODS } from '../lib/format'
 import { useApi } from '../lib/hooks'
 import { useToast } from '../lib/toast'
-import { AdminPage, AreaChart, Panel, Stat, StatusChip } from './kit'
+import { AdminPage, Panel, Stat, StatusChip } from './kit'
+import { BarList, ColumnChart, DataTable, LineChart, SegmentBar, Sparkline } from './charts'
+import { nf } from '../lib/format'
 
-const nf = new Intl.NumberFormat('fr-FR')
-const PM_COLORS: Record<string, string> = { orange_money: '#FF7900', mtn_momo: '#FFCB05', wave: '#1DC8F2', moov_money: '#0067B1', card: '#1A1F71' }
+const RANGES: [string, string][] = [['7', '7 jours'], ['30', '30 jours'], ['90', '90 jours'], ['365', '12 mois']]
+const PERIOD_TXT: Record<string, string> = { '7': 'aux 7 jours précédents', '30': 'aux 30 jours précédents', '90': 'aux 90 jours précédents', '365': 'aux 12 mois précédents' }
+
+/** Évolution vs période précédente : flèche + texte (jamais la couleur seule). */
+function Delta({ now, prev, invert = false, tone }: { now: number; prev: number; invert?: boolean; tone?: 'navy' }) {
+  if (!prev) return <span className={tone ? 'text-white/75' : 'text-muted'}>{now ? 'Nouveau sur la période' : 'Pas encore de données'}</span>
+  const pct = Math.round(((now - prev) / prev) * 100)
+  const good = invert ? pct < 0 : pct > 0
+  const cls = tone ? 'bg-white/18 text-white' : pct === 0 ? 'bg-paper text-muted' : good ? 'bg-[#DCFCE7] text-[#15803D]' : 'bg-[#FEE2E2] text-[#B91C1C]'
+  return <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12.5px] font-semibold ${cls}`}>{pct > 0 ? '▲' : pct < 0 ? '▼' : '='} {Math.abs(pct)} %</span>
+}
+
+function Kpi({ label, value, now, prev, spark, sub, hero = false }: { label: string; value: string; now: number; prev: number; spark?: number[]; sub?: string; hero?: boolean }) {
+  return (
+    <div className={`${hero ? 'card-navy' : 'card'} relative flex flex-col gap-1 overflow-hidden p-5`}>
+      {hero && <img src="/mark-mono.svg" alt="" className="pointer-events-none absolute -right-8 -bottom-8 h-[140px] w-[140px] opacity-10" />}
+      <span className={`text-[13.5px] ${hero ? 'text-white/80' : 'text-muted'}`}>{label}</span>
+      <b className={`font-bold ${hero ? 'text-[34px] md:text-[40px]' : 'text-[26px]'} leading-tight`}>{value}</b>
+      <span className="flex flex-wrap items-center gap-1.5 text-[12.5px]"><Delta now={now} prev={prev} tone={hero ? 'navy' : undefined} />{sub && <span className={hero ? 'text-white/75' : 'text-muted'}>{sub}</span>}</span>
+      {spark && <div className="mt-2"><Sparkline values={spark} color={hero ? '#ffffff' : 'var(--chart-1)'} /></div>}
+    </div>
+  )
+}
 
 export default function Dashboard() {
   const [range, setRange] = useState('30')
-  const { data: d, loading, reload } = useApi(`/api/backoffice/dashboard/?range=${range}`)
+  const { data: d, loading, reload } = useApi('/api/backoffice/dashboard/')
+  const { data: a, loading: aLoading } = useApi(`/api/backoffice/analytics/?range=${range}`)
   const { user } = useAuth()
   const nav = useNavigate()
   const toast = useToast()
-  if (loading && !d) return <Spinner />
-  if (!d) return null
-  const finance = 'sales_month' in d
-  const evo = d.sales_prev_month ? Math.round(((d.sales_month - d.sales_prev_month) / d.sales_prev_month) * 100) : null
-  const prevMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('fr-FR', { month: 'long' })
-  const totalPm = (d.by_method ?? []).reduce((a: number, m: any) => a + m.total, 0) || 1
+  if ((loading && !d) || (aLoading && !a)) return <Spinner />
+  if (!d || !a) return null
+  const finance = 'revenue' in a.kpis
   const alert = d.alerts?.[0]
   const session = d.upcoming_sessions?.[0]
   const moderation = d.pending_comments + d.pending_reviews
-  const labelOf = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', range === '365' ? { month: 'short', year: '2-digit' } : { day: 'numeric', month: 'short' })
+  const k = a.kpis
+  const monthly = a.monthly
+  const short = (iso: string) => new Date(iso + 'T12:00').toLocaleDateString('fr-FR', monthly ? { month: 'short', year: '2-digit' } : { day: 'numeric', month: 'short' })
+  const full = (iso: string) => new Date(iso + 'T12:00').toLocaleDateString('fr-FR', monthly ? { month: 'long', year: 'numeric' } : { weekday: 'long', day: 'numeric', month: 'long' })
+  const labels = a.series.map((x: any) => short(x.date))
+  const fulls = a.series.map((x: any) => full(x.date))
+  const col = (key: string, src = a.series) => src.map((x: any) => x[key] ?? 0)
+  const vs = `par rapport ${PERIOD_TXT[range]}`
+  const funnelTop = Math.max(1, a.funnel[0].value)
 
   return (
     <AdminPage
@@ -38,49 +66,93 @@ export default function Dashboard() {
         <button className="btn btn-primary !min-h-[42px]" onClick={() => nav('/admin/blog/nouveau')}>+ Nouveau</button>
       </>}>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
-        {finance && (
-          <div className="col-span-2 lg:col-span-1">
-            <Stat tone="navy" label="Ventes du mois" value={<>{nf.format(d.sales_month)} <span className="text-sm">FCFA</span></>}
-              sub={evo !== null && <span className="mt-1.5 inline-block rounded-md bg-white/18 px-2 py-0.5 text-xs">{evo >= 0 ? '▲' : '▼'} {Math.abs(evo)} % vs {prevMonth}</span>} />
-          </div>
-        )}
-        {finance && <Stat label="Aujourd'hui" value={nf.format(d.sales_today)} sub={`FCFA · ${d.orders_today} commande(s)`} />}
-        <Stat label="Nouveaux comptes" value={d.new_accounts_month} sub={`▲ ${d.new_accounts_week} cette semaine`} subTone="ok" />
-        <Link to="/admin/blog?onglet=moderation"><Stat tone="orange" label="À modérer" value={moderation} sub={`${d.pending_comments} commentaire(s), ${d.pending_reviews} avis`} /></Link>
+      {/* Un seul filtre, au-dessus de tout ce qu'il règle */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="seg" role="tablist" aria-label="Période analysée">
+          {RANGES.map(([v, l]) => <button key={v} role="tab" aria-selected={range === v} onClick={() => setRange(v)}>{l}</button>)}
+        </div>
+        <span className="text-[13.5px] text-muted">Comparé {PERIOD_TXT[range]}</span>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-        {finance && (
-          <Panel title="Ventes" action={
-            <div className="seg !bg-paper text-xs" role="tablist">
-              {[['7', '7 j'], ['30', '30 j'], ['365', '12 m']].map(([v, l]) => (
-                <button key={v} role="tab" aria-selected={range === v} onClick={() => setRange(v)} className="!px-2.5 !py-1.5">{l}</button>
-              ))}
-            </div>}>
-            <AreaChart data={d.series.map((x: any) => ({ label: labelOf(x.date), value: x.total }))} format={(n) => `${nf.format(n)} F`} />
+      <div className={`grid gap-4 transition-opacity ${aLoading ? 'opacity-50' : ''}`} aria-busy={aLoading}>
+        <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
+          <div className="col-span-2 xl:col-span-1">
+            {finance
+              ? <Kpi hero label="Chiffre d'affaires" value={`${nf.format(k.revenue.value)} F`} now={k.revenue.value} prev={k.revenue.prev} sub={vs} spark={col('revenue')} />
+              : <Kpi hero label="Visiteurs" value={nf.format(k.visitors.value)} now={k.visitors.value} prev={k.visitors.prev} sub={vs} spark={col('visitors')} />}
+          </div>
+          {finance && <Kpi label="Visiteurs" value={nf.format(k.visitors.value)} now={k.visitors.value} prev={k.visitors.prev} spark={col('visitors')} />}
+          {finance
+            ? <Kpi label="Commandes payées" value={nf.format(k.orders.value)} now={k.orders.value} prev={k.orders.prev} sub={k.orders.value ? `panier moyen ${nf.format(k.avg_order.value)} F` : undefined} spark={col('orders')} />
+            : <Kpi label="Pages vues" value={nf.format(k.views.value)} now={k.views.value} prev={k.views.prev} sub={`${String(k.pages_per_visit.value).replace('.', ',')} par visite`} spark={col('views')} />}
+          <Kpi label="Comptes créés" value={nf.format(k.signups.value)} now={k.signups.value} prev={k.signups.prev} spark={col('signups')} />
+          {!finance && <Kpi label="Taux de conversion" value={`${String(k.conversion.value).replace('.', ',')} %`} now={k.conversion.value} prev={k.conversion.prev} sub="visiteurs devenus acheteurs" />}
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
+          <Panel title="Visiteurs uniques" action={
+            <span className="flex items-center gap-4 text-[12.5px] text-muted">
+              <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded-full bg-[var(--chart-1)]" />Période</span>
+              <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded-full bg-[var(--chart-prev)]" />Précédente</span>
+            </span>}>
+            <LineChart label={`Visiteurs uniques par ${monthly ? 'mois' : 'jour'}, comparés à la période précédente`} labels={labels} fullLabels={fulls} format={(n) => nf.format(n)}
+              series={[
+                { key: 'prev', name: 'Période précédente', color: 'var(--chart-prev)', values: col('visitors', a.previous), muted: true },
+                { key: 'cur', name: 'Visiteurs', color: 'var(--chart-1)', values: col('visitors') },
+              ]} />
+            <DataTable caption="Visiteurs par date" head={['Date', 'Visiteurs', 'Pages vues', 'Comptes créés']}
+              rows={a.series.map((x: any) => [full(x.date), nf.format(x.visitors), nf.format(x.views), nf.format(x.signups)])} />
           </Panel>
-        )}
-        {finance && (
-          <Panel title="Moyens de paiement">
-            {d.by_method.length === 0 ? <p className="text-sm text-muted">Aucun paiement ce mois-ci.</p> : (
-              <>
-                <div className="flex h-3.5 overflow-hidden rounded-full">
-                  {d.by_method.map((m: any) => <span key={m.payment_method} style={{ width: `${(m.total / totalPm) * 100}%`, background: PM_COLORS[m.payment_method] ?? '#9A9DA6' }} />)}
-                </div>
-                <ul className="mt-3 grid gap-2.5 text-[14px]">
-                  {d.by_method.map((m: any) => (
-                    <li key={m.payment_method} className="flex items-center gap-2.5">
-                      <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: PM_COLORS[m.payment_method] ?? '#9A9DA6' }} />
-                      {PAYMENT_METHODS.find((p) => p.value === m.payment_method)?.label ?? m.payment_method}
-                      <b className="ml-auto">{Math.round((m.total / totalPm) * 100)} %</b>
-                    </li>
-                  ))}
-                </ul>
-              </>
+          <Panel title="D'où viennent les visiteurs">
+            <BarList format={(n) => nf.format(n)} rows={a.sources.map((s: any) => ({ key: s.key, label: s.label, value: s.visitors, hint: k.visitors.value ? `${Math.round((s.visitors / k.visitors.value) * 100)} %` : undefined }))} />
+          </Panel>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
+          {finance ? (
+            <Panel title={`Chiffre d'affaires par ${monthly ? 'mois' : 'jour'}`} action={<span className="text-[12.5px] text-muted">FCFA, commandes payées</span>}>
+              <ColumnChart label="Chiffre d'affaires par période" labels={labels} fullLabels={fulls} values={col('revenue')} name="Chiffre d'affaires" format={(n) => `${nf.format(n)} F`} />
+              <DataTable caption="Chiffre d'affaires par date" head={['Date', 'Chiffre d\u2019affaires (F)', 'Commandes']}
+                rows={a.series.map((x: any) => [full(x.date), nf.format(x.revenue), nf.format(x.orders)])} />
+            </Panel>
+          ) : (
+            <Panel title={`Pages vues par ${monthly ? 'mois' : 'jour'}`}>
+              <ColumnChart label="Pages vues par période" labels={labels} fullLabels={fulls} values={col('views')} name="Pages vues" format={(n) => nf.format(n)} />
+            </Panel>
+          )}
+          <Panel title="Appareils">
+            <SegmentBar label="Visiteurs par appareil" parts={a.devices.map((x: any, i: number) => ({ key: x.key, label: x.label, value: x.visitors, color: ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)'][i] }))} />
+            {finance && (
+              <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-4 text-[13.5px]">
+                <div><dt className="text-muted">Conversion</dt><dd className="text-[20px] font-bold">{String(k.conversion.value).replace('.', ',')} %</dd><dd><Delta now={k.conversion.value} prev={k.conversion.prev} /></dd></div>
+                <div><dt className="text-muted">Pages par visite</dt><dd className="text-[20px] font-bold">{String(k.pages_per_visit.value).replace('.', ',')}</dd><dd><Delta now={k.pages_per_visit.value} prev={k.pages_per_visit.prev} /></dd></div>
+              </dl>
             )}
           </Panel>
-        )}
+        </div>
+
+        <div className={`grid gap-4 ${finance ? 'xl:grid-cols-3' : 'xl:grid-cols-2'}`}>
+          <Panel title="Pages les plus vues">
+            <BarList format={(n) => nf.format(n)} rows={a.top_pages.map((p: any) => ({ key: p.path, label: p.label, value: p.views, hint: p.entries ? `${nf.format(p.entries)} entrée${p.entries > 1 ? 's' : ''}` : undefined }))} />
+          </Panel>
+          <Panel title="Du visiteur à l'acheteur">
+            <BarList format={(n) => nf.format(n)} color="var(--chart-3)" rows={a.funnel.map((f: any) => ({ key: f.key, label: f.label, value: f.value, hint: f.key === 'visitors' ? undefined : `${String(Math.round((f.value / funnelTop) * 1000) / 10).replace('.', ',')} %` }))} />
+            <p className="mt-4 text-[12.5px] leading-relaxed text-muted">Part des visiteurs de la période qui ont créé un compte, puis payé une commande.</p>
+          </Panel>
+          {finance && (
+            <Panel title="Meilleures ventes">
+              <BarList format={(n) => `${nf.format(n)} F`} color="var(--chart-2)" empty="Aucune vente sur la période."
+                rows={(a.top_products ?? []).map((p: any, i: number) => ({ key: String(i), label: p.label, value: p.revenue, hint: `${p.sold} vendu${p.sold > 1 ? 's' : ''}` }))} />
+            </Panel>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <Link to="/admin/blog?onglet=moderation"><Stat tone="orange" label="À modérer" value={moderation} sub={`${d.pending_comments} commentaire(s), ${d.pending_reviews} avis`} /></Link>
+        <Stat label="Abonnés newsletter" value={nf.format(d.subscribers)} sub={`+${nf.format(k.subscribers.value)} sur la période`} />
+        <Stat label="Inscriptions formations" value={nf.format(k.enrollments.value)} sub="confirmées sur la période" />
+        <Stat label="Lecteurs actifs aujourd'hui" value={nf.format(d.active_readers_today)} sub={`${nf.format(d.accounts_total)} comptes lecteurs`} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">

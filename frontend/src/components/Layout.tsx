@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { formatPhone } from '../lib/format'
+import { formatPhone, PAYMENT_METHODS } from '../lib/format'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { post } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useCart } from '../lib/cart'
 import { useSettings } from '../lib/hooks'
-import { Icon, initials, Logo } from './ui'
+import { Icon, initials, Logo, PayLogo } from './ui'
 
 // Menu de l'en-tête « Adj Header » des maquettes.
 type NavItem = { to: string; label: string; children?: { to: string; label: string; hint: string }[] }
@@ -21,7 +20,6 @@ const NAV: NavItem[] = [
       { to: '/a-propos#domaines', label: "Domaines d'intervention", hint: 'Les sujets sur lesquels il forme et intervient' },
     ],
   },
-  { to: '/contact', label: 'Contact' },
 ]
 
 /** Entrée de menu à sous-menu : s'ouvre au survol, au clic et au clavier ; se ferme avec Échap ou en sortant. */
@@ -41,13 +39,13 @@ function NavDropdown({ item }: { item: NavItem }) {
   }, [open])
   return (
     // Le libellé reste un lien vers la page ; la flèche ouvre le sous-menu (clic, clavier, toucher). Survol souris : ouverture aussi.
-    <div ref={ref} className="relative flex items-center gap-0.5"
+    <div ref={ref} className="relative flex items-center"
       onPointerEnter={(e) => e.pointerType === 'mouse' && setOpen(true)} onPointerLeave={(e) => e.pointerType === 'mouse' && setOpen(false)}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false) }}>
-      <NavLink to={item.to} className={active ? 'font-semibold text-blue' : 'hover:text-blue'}>{item.label}</NavLink>
+      <NavLink to={item.to} className={`nav-pill !pr-1 ${active ? 'is-active' : ''}`}>{item.label}</NavLink>
       <button type="button" aria-expanded={open} aria-controls="sous-menu-apropos" aria-label={`Sous-menu ${item.label}`} onClick={() => setOpen(!open)}
-        className={`-mr-2 grid h-8 w-7 place-items-center rounded-md ${active ? 'text-blue' : 'hover:text-blue'}`}>
-        <Icon name="angle-small-down" className={`text-base transition-transform ${open ? 'rotate-180' : ''}`} />
+        className={`-ml-0.5 mr-1.5 grid h-7 w-6 place-items-center rounded-full ${active ? 'text-blue' : 'hover:text-blue'}`}>
+        <Icon name="angle-small-down" className={`text-[15px] leading-none transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="absolute top-full left-1/2 z-50 -translate-x-1/2 pt-4">
@@ -93,6 +91,14 @@ function Header() {
   const [theme, setTheme] = useTheme()
   const loc = useLocation()
   useEffect(() => { setOpen(false) }, [loc.pathname])
+  // En-tête plus compact et ombré dès qu'on fait défiler la page.
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 24)
+    on()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => window.removeEventListener('scroll', on)
+  }, [])
 
   const { data: site } = useSettings<{ whatsapp_number: string }>()
   const phone = site?.whatsapp_number ? formatPhone(site.whatsapp_number) : ''
@@ -100,38 +106,41 @@ function Header() {
     <header className="sticky top-0 z-40 no-print">
       {/* Bandeau de réassurance (maquette « Adj Header ») */}
       <div className="hidden bg-ink text-[13.5px] text-[#D9DBE0] md:block">
-        <div className="container-x flex items-center gap-8 py-2.5">
+        <div className="container-x flex items-center gap-8 py-2">
           {[['mobile-notch', 'Paiement Mobile Money'], ['lock', 'Lecture sécurisée'], ['clock', 'Accès immédiat']].map(([i, l], k) => (
-            <span key={l} className={`items-center gap-2 whitespace-nowrap ${k === 2 ? 'hidden lg:flex' : 'flex'}`}><Icon name={i} className="text-orange" />{l}</span>
+            <span key={l} className={`items-center gap-2 whitespace-nowrap ${k === 2 ? 'hidden lg:flex' : 'flex'}`}><Icon name={i} className="text-peach" />{l}</span>
           ))}
           {phone && <a href={`https://wa.me/${site!.whatsapp_number}`} className="ml-auto whitespace-nowrap">WhatsApp : <b className="text-white">{phone}</b></a>}
         </div>
       </div>
-      <div className="border-b border-[#EFF0F2] bg-[var(--card)]">
-        <div className="container-x flex h-[76px] items-center gap-6">
-          <Link to="/" aria-label="Accueil Adjougbe"><Logo /></Link>
-          <nav className="ml-auto hidden gap-[30px] text-sm font-medium text-ink-soft lg:flex" aria-label="Navigation principale">
+      <div className={`border-b bg-[var(--card)]/90 backdrop-blur-xl transition-[box-shadow,border-color] duration-300 supports-[backdrop-filter]:bg-[var(--card)]/80 ${scrolled ? 'border-transparent shadow-[0_14px_34px_-24px_rgba(4,28,92,.5)]' : 'border-line'}`}>
+        <div className={`container-x flex items-center gap-6 transition-[height] duration-300 ${scrolled ? 'h-[64px]' : 'h-[76px]'}`}>
+          <Link to="/" aria-label="Accueil Adjougbe" className="shrink-0"><Logo /></Link>
+          {/* Menu : un rail discret, l'entrée active est marquée d'un trait orange. */}
+          <nav className="mx-auto hidden items-center gap-1 rounded-full bg-paper/80 p-1 text-[14px] leading-none font-medium text-ink-soft ring-1 ring-ink/[.04] lg:flex" aria-label="Navigation principale">
             {NAV.map((n) => n.children ? <NavDropdown key={n.to} item={n} /> : (
               <NavLink key={n.to} to={n.to} end={n.to === '/'}
-                className={({ isActive }) => (isActive ? 'font-semibold text-blue' : 'hover:text-blue')}>
+                className={({ isActive }) => `nav-pill ${isActive ? 'is-active' : ''}`}>
                 {n.label}
               </NavLink>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-[18px] lg:ml-6">
-            <Link to="/recherche" className="hidden text-ink-soft sm:block" aria-label="Rechercher"><Icon name="search" className="text-lg" /></Link>
-            <Link to="/panier" className="relative text-ink-soft" aria-label={`Panier, ${items.length} article(s)`}>
-              <Icon name="shopping-bag" className="text-lg" />
-              {items.length > 0 && <span className="absolute -top-1.5 -right-2 grid h-4 w-4 place-items-center rounded-full bg-orange text-[9px] font-bold text-white">{items.length}</span>}
+          <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <Link to="/recherche" className="icon-btn hidden sm:grid" aria-label="Rechercher" title="Rechercher"><Icon name="search" /></Link>
+            <Link to="/panier" className="icon-btn relative" aria-label={`Panier, ${items.length} article(s)`} title="Panier">
+              <Icon name="shopping-bag" />
+              {items.length > 0 && <span className="absolute -top-0.5 -right-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-orange px-1 text-[10px] font-bold text-white ring-2 ring-[var(--card)]">{items.length}</span>}
             </Link>
             {user ? (
-              <Link to={user.is_staff_role ? '/admin' : '/bibliotheque'} className="hidden items-center gap-2.5 rounded-full bg-[#F2F3F5] py-1.5 pr-3.5 pl-1.5 text-sm font-semibold sm:flex">
-                <span className="avatar h-8 w-8">{initials(user.full_name)}</span>{user.is_staff_role ? 'Studio' : user.full_name.split(' ')[0]}
+              <Link to={user.is_staff_role ? '/admin' : '/bibliotheque'} className="ml-1 hidden items-center gap-2.5 rounded-full border border-line bg-[var(--card)] py-1 pr-4 pl-1 text-sm font-semibold transition-colors hover:border-blue sm:flex">
+                <span className="avatar h-8 w-8">{initials(user.full_name)}</span>
+                <span className="leading-tight">{user.is_staff_role ? 'Studio' : user.full_name.split(' ')[0]}<span className="block text-[11.5px] font-medium text-muted">{user.is_staff_role ? 'Administration' : 'Mon espace'}</span></span>
               </Link>
-            ) : (
-              <Link to="/boutique" className="btn btn-primary hidden !rounded-lg !px-5 text-sm shadow-[0_8px_18px_-8px_rgba(255,107,41,.8)] sm:inline-flex">Acheter un livre</Link>
-            )}
-            <button type="button" className="grid h-10 w-10 place-items-center rounded-full border border-ink/15 lg:hidden"
+            ) : (<>
+              <Link to="/connexion" className="ml-1 hidden rounded-full px-4 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:bg-paper hover:text-blue sm:block">Se connecter</Link>
+              <Link to="/boutique" className="btn btn-primary hidden !rounded-full !px-5 !py-2.5 text-sm shadow-[0_8px_18px_-8px_rgba(255,107,41,.8)] sm:inline-flex">Acheter un livre</Link>
+            </>)}
+            <button type="button" className="icon-btn lg:hidden"
               aria-expanded={open} aria-controls="menu-mobile" onClick={() => setOpen(!open)} aria-label="Menu">
               <Icon name={open ? 'cross-small' : 'menu-burger'} />
             </button>
@@ -149,13 +158,13 @@ function Header() {
             <nav className="relative flex flex-col px-6 py-6 text-[26px] font-semibold" aria-label="Menu mobile">
               {NAV.map((n, i) => n.children ? (
                 <div key={n.to} className={`py-3 ${i < NAV.length - 1 ? 'border-b border-white/12' : ''}`}>
-                  <span className={loc.pathname.startsWith(n.to) ? 'text-orange' : ''}>{n.label}</span>
+                  <span className={loc.pathname.startsWith(n.to) ? 'text-peach' : ''}>{n.label}</span>
                   <div className="mt-2 grid gap-1 border-l-2 border-white/20 pl-4 text-[18px] font-medium">
                     {n.children.map((c) => <Link key={c.to} to={c.to} onClick={() => setOpen(false)} className="py-1.5 text-white/85 hover:text-white">{c.label}</Link>)}
                   </div>
                 </div>
               ) : (
-                <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => `py-3 ${i < NAV.length - 1 ? 'border-b border-white/12' : ''} ${isActive ? 'text-orange' : ''}`}>{n.label}</NavLink>
+                <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => `py-3 ${i < NAV.length - 1 ? 'border-b border-white/12' : ''} ${isActive ? 'text-peach' : ''}`}>{n.label}</NavLink>
               ))}
             </nav>
             <div className="relative mt-auto flex flex-col gap-2.5 px-5 pb-7">
@@ -171,86 +180,72 @@ function Header() {
   )
 }
 
-function NewsletterForm() {
-  const [email, setEmail] = useState('')
-  const [msg, setMsg] = useState('')
-  const [err, setErr] = useState('')
-  const submit = async (e: FormEvent) => {
-    e.preventDefault()
-    setErr('')
-    try {
-      const r = await post('/api/newsletter/subscribe/', { email, consent: true, source: 'pied-de-page' })
-      setMsg(r.message)
-    } catch (ex) {
-      setErr((ex as Error).message)
-    }
-  }
-  if (msg) return <p className="font-medium text-white">{msg}</p>
-  return (
-    <form onSubmit={submit} className="grid gap-3">
-      <div className="flex overflow-hidden rounded-[10px] shadow-[0_20px_40px_-20px_rgba(0,0,0,.6)]">
-        <label className="sr-only" htmlFor="nl-email">Adresse e-mail</label>
-        <input id="nl-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-          placeholder="Votre adresse e-mail" className="min-w-0 flex-1 bg-white px-4 py-4 text-sm text-ink outline-none" />
-        <button className="bg-orange px-6 text-sm font-semibold text-white hover:bg-orange-dark">S'inscrire</button>
-      </div>
-      {err && <span className="text-sm text-orange">{err}</span>}
-    </form>
-  )
-}
-
-// Pages déjà entièrement sur fond bleu : pas de bandeau newsletter (pas de « cassure » de couleur).
-const FULL_BLUE = /^\/(connexion|inscription|mot-de-passe|verifier-email|verification-envoyee)/
-
 function Footer() {
-  const { pathname } = useLocation()
   const { data } = useSettings<{ contact_email: string; whatsapp_number: string }>()
+  const phone = data?.whatsapp_number ? formatPhone(data.whatsapp_number) : ''
+  const col = 'flex flex-col gap-3 text-[14.5px]'
+  const link = 'w-fit text-white/70 transition-colors hover:text-white'
   return (
-    <footer className="no-print">
-      {!FULL_BLUE.test(pathname) && <div className="relative overflow-hidden text-white" style={{ background: 'radial-gradient(500px 300px at 85% 30%,#3FA2FF,transparent 70%),linear-gradient(125deg,#041C5C,#0A3A9E 45%,#1560DC)' }}>
-        <div className="pointer-events-none absolute inset-0 opacity-[.045]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '92px 92px' }} />
-        <div className="container-x relative flex flex-col gap-6 py-12 md:py-14 lg:flex-row lg:items-center lg:gap-12">
-          <div className="flex-1">
-            <div className="text-[12px] font-semibold tracking-[.14em] opacity-75">RESTONS EN CONTACT</div>
-            <p className="mt-2.5 text-2xl font-bold md:text-[30px]">Recevez la punchline du jour</p>
-          </div>
-          <div className="w-full lg:w-[460px]"><NewsletterForm /></div>
+    <footer className="no-print relative overflow-hidden text-white" style={{ background: 'radial-gradient(700px 380px at 88% 0%,rgba(63,162,255,.28),transparent 70%),linear-gradient(160deg,#041C5C 0%,#06225f 55%,#0A3A9E 100%)' }}>
+      <div className="pointer-events-none absolute inset-0 opacity-[.035]" style={{ backgroundImage: 'url(/mark-mono.svg)', backgroundSize: '92px 92px' }} />
+      <img src="/mark-mono.svg" alt="" className="pointer-events-none absolute -right-24 -bottom-24 hidden h-[420px] w-[420px] opacity-[.06] lg:block" />
+
+      {/* Signature : la devise et les deux portes d'entrée du site. */}
+      <div className="container-x relative grid gap-8 border-b border-white/10 py-12 md:py-14 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div>
+          <p className="text-[13px] font-semibold tracking-[.2em] text-peach">POSSUMUS</p>
+          <p className="mt-3 max-w-[620px] text-[28px] leading-[1.15] font-bold tracking-[-0.02em] md:text-[38px]">Nous pouvons. Lire, apprendre et grandir, ensemble.</p>
         </div>
-      </div>}
-      <div className="bg-ink text-[#D9DBE0]">
-        <div className="container-x grid gap-10 pt-14 pb-7 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
-          <div>
-            <Logo light />
-            <p className="mt-4 max-w-xs text-[14.5px] leading-7 text-faint">Livres, formations et contenus pour développer le leadership. Abidjan, Côte d'Ivoire.</p>
-          </div>
-          <nav className="flex flex-col gap-2.5 text-[14.5px]" aria-label="Explorer">
-            <b className="mb-1 text-white">Explorer</b>
-            <Link to="/boutique" className="hover:text-white">Œuvres</Link>
-            <Link to="/formations" className="hover:text-white">Formations</Link>
-            <Link to="/blog" className="hover:text-white">Blog</Link>
-            <Link to="/a-propos" className="hover:text-white">À propos</Link>
-            <Link to="/a-propos#domaines" className="hover:text-white">Domaines d'intervention</Link>
-          </nav>
-          <nav className="flex flex-col gap-2.5 text-[14.5px]" aria-label="Mon compte">
-            <b className="mb-1 text-white">Mon compte</b>
-            <Link to="/bibliotheque" className="hover:text-white">Bibliothèque</Link>
-            <Link to="/compte/commandes" className="hover:text-white">Commandes</Link>
-            <Link to="/compte" className="hover:text-white">Profil</Link>
-            <Link to="/cadeau" className="hover:text-white">J'ai un code cadeau</Link>
-          </nav>
-          <div className="flex flex-col gap-2.5 text-[14.5px]">
-            <b className="mb-1 text-white">Contact</b>
-            {data?.contact_email && <a href={`mailto:${data.contact_email}`} className="hover:text-white">{data.contact_email}</a>}
-            {data?.whatsapp_number && <a href={`https://wa.me/${data.whatsapp_number}`} className="hover:text-white">WhatsApp</a>}
-            <Link to="/contact" className="hover:text-white">Contact et dédicaces</Link>
+        <div className="flex flex-wrap gap-3">
+          <Link to="/boutique" className="btn btn-primary !rounded-full shadow-orange">Découvrir les œuvres</Link>
+          <Link to="/formations" className="btn !rounded-full border border-white/25 bg-white/10 text-white hover:bg-white/20">Prochaines formations</Link>
+        </div>
+      </div>
+
+      <div className="container-x relative grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+        <div>
+          <Logo light />
+          <p className="mt-5 max-w-[300px] text-[14.5px] leading-7 text-white/70">Livres, formations et contenus pour développer le leadership, depuis Abidjan.</p>
+          <div className="mt-5 flex gap-2.5">
+            {data?.whatsapp_number && <a href={`https://wa.me/${data.whatsapp_number}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-[17px] transition-colors hover:bg-[#25D366]"><i className="fi fi-brands-whatsapp leading-none" aria-hidden="true" /></a>}
+            {data?.contact_email && <a href={`mailto:${data.contact_email}`} aria-label="E-mail" className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/20"><Icon name="envelope" className="leading-none" /></a>}
           </div>
         </div>
-        <div className="container-x flex flex-wrap gap-x-6 gap-y-2 border-t border-white/10 py-5 text-[13.5px] text-faint">
-          <span>© {new Date().getFullYear()} Adjougbe</span>
-          <Link to="/cgu" className="hover:text-white">CGU</Link>
-          <Link to="/confidentialite" className="hover:text-white">Confidentialité</Link>
-          <Link to="/mentions-legales" className="hover:text-white">Mentions légales</Link>
-          <span className="sm:ml-auto">Paiements sécurisés · FCFA</span>
+        <nav className={col} aria-label="Explorer">
+          <b className="mb-1 text-[13px] tracking-[.08em] text-white/50">Explorer</b>
+          <Link to="/boutique" className={link}>Œuvres</Link>
+          <Link to="/formations" className={link}>Formations</Link>
+          <Link to="/blog" className={link}>Blog</Link>
+          <Link to="/a-propos" className={link}>À propos</Link>
+          <Link to="/a-propos#domaines" className={link}>Domaines d'intervention</Link>
+        </nav>
+        <nav className={col} aria-label="Mon compte">
+          <b className="mb-1 text-[13px] tracking-[.08em] text-white/50">Mon compte</b>
+          <Link to="/bibliotheque" className={link}>Bibliothèque</Link>
+          <Link to="/compte/commandes" className={link}>Commandes</Link>
+          <Link to="/compte" className={link}>Profil</Link>
+          <Link to="/cadeau" className={link}>J'ai un code cadeau</Link>
+        </nav>
+        <div className={col}>
+          <b className="mb-1 text-[13px] tracking-[.08em] text-white/50">Nous joindre</b>
+          {phone && <a href={`https://wa.me/${data!.whatsapp_number}`} target="_blank" rel="noopener noreferrer" className={link}><span className="block text-[12.5px] text-white/50">WhatsApp</span><b className="font-semibold text-white">{phone}</b></a>}
+          {data?.contact_email && <a href={`mailto:${data.contact_email}`} className={`${link} break-all`}><span className="block text-[12.5px] text-white/50">E-mail</span>{data.contact_email}</a>}
+          <span className="text-white/70"><span className="block text-[12.5px] text-white/50">Basé à</span>Abidjan, Côte d'Ivoire</span>
+        </div>
+      </div>
+
+      <div className="relative border-t border-white/10">
+        <div className="container-x flex flex-col gap-4 py-6 text-[13.5px] text-white/60 md:flex-row md:items-center">
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <span>© {new Date().getFullYear()} Adjougbe</span>
+            <Link to="/cgu" className="hover:text-white">CGU</Link>
+            <Link to="/confidentialite" className="hover:text-white">Confidentialité</Link>
+            <Link to="/mentions-legales" className="hover:text-white">Mentions légales</Link>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 md:ml-auto">
+            <span className="mr-1">Paiement sécurisé</span>
+            {PAYMENT_METHODS.map((m) => <span key={m.value} className="rounded-md bg-white p-0.5"><PayLogo method={m.value} size={22} /></span>)}
+          </div>
         </div>
       </div>
     </footer>
@@ -291,8 +286,29 @@ function MobileTabs() {
   )
 }
 
+// Mesure d'audience interne (sans cookie, IP non conservée) : une page vue par changement de page.
+// La provenance (document.referrer) n'a de sens que pour la première page chargée.
+let firstHit = true
+let lastCounted = ''
+function useAudience() {
+  const { pathname } = useLocation()
+  const { user, loading } = useAuth()
+  useEffect(() => {
+    // On attend de savoir qui navigue : l'équipe du Studio n'est pas comptée.
+    if (loading || user?.is_staff_role || navigator.doNotTrack === '1' || lastCounted === pathname) return
+    lastCounted = pathname  // une connexion sur la même page ne la recompte pas
+    const referrer = firstHit ? document.referrer : ''
+    firstHit = false
+    fetch('/api/analytics/hit/', {
+      method: 'POST', credentials: 'omit', keepalive: true,
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: pathname, referrer }),
+    }).catch(() => { /* la mesure ne doit jamais gêner la navigation */ })
+  }, [pathname, loading, user?.is_staff_role])
+}
+
 export default function Layout() {
   const loc = useLocation()
+  useAudience()
   // Accolades obligatoires : dans les Chrome récents, scrollTo() renvoie une promesse, que React prendrait pour un nettoyage.
   useEffect(() => { if (!loc.hash) window.scrollTo(0, 0) }, [loc.pathname, loc.hash])
   // Lien vers une ancre (/a-propos#domaines) : la section peut arriver après le chargement des données.

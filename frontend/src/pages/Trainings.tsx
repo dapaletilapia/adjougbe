@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { FilterBar } from '../components/FilterBar'
 import { PageHero } from '../components/PageHero'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { DynamicForm } from '../components/DynamicForm'
@@ -145,16 +146,11 @@ export default function Trainings() {
         {upcoming.length > 0 && <div className="container-x relative z-[1] -mt-4 mb-10 md:-mt-8 md:mb-12"><UpcomingRail items={upcoming.slice(0, 8)} /></div>}
         <div className="container-x">
           <h2 className="sr-only">Toutes les formations</h2>
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Filtrer les formations">
-            {FILTERS.map(([v, l]) => (
-              <button key={v} onClick={() => setFilter(v)} aria-pressed={filter === v}
-                className={`shrink-0 rounded-full px-[18px] py-2.5 text-sm font-medium ${filter === v ? 'bg-ink text-white' : 'bg-[var(--card)] hover:text-blue'}`}>{l}</button>
-            ))}
-          </div>
+          <FilterBar label="Filtrer les formations" value={filter} onChange={setFilter} options={FILTERS.map(([v, l]) => ({ value: v, label: l }))} />
         </div>
         <div className="container-x mt-7 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {loading && <Spinner />}
-          {!loading && !list.length && <div className="sm:col-span-2 xl:col-span-3"><Empty title="Aucune formation pour ce filtre">Les prochaines dates sont annoncées dans la newsletter, en bas de page.</Empty></div>}
+          {!loading && !list.length && <div className="sm:col-span-2 xl:col-span-3"><Empty title="Aucune formation pour ce filtre">Essayez un autre filtre : les nouvelles dates sont publiées ici dès qu'elles sont fixées.</Empty></div>}
           {list.map((t) => <TrainingCard key={t.id} t={t} />)}
         </div>
       </div>
@@ -217,7 +213,7 @@ export function TrainingDetail() {
           {t.program?.length > 0 && (
             <section>
               <h2 className="text-2xl">Le déroulé</h2>
-              <ol className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <ol className="mt-5 grid gap-4 sm:grid-cols-2">
                 {t.program.map((m: any, i: number) => (
                   <li key={i} className="card relative flex flex-col gap-2 overflow-hidden p-6">
                     <span className="absolute inset-x-0 top-0 h-1" style={{ background: 'linear-gradient(90deg,#1560DC,#3FA2FF)' }} />
@@ -251,11 +247,11 @@ export function TrainingDetail() {
             </section>
           )}
         </div>
-        <aside className="order-first grid content-start gap-4 lg:order-none lg:sticky lg:top-32 lg:-mt-28">
+        <aside className="order-first grid content-start gap-4 lg:order-none lg:sticky lg:top-32 lg:-mt-28 lg:self-start">
           <div className="card relative z-[1] overflow-hidden">
             <div className="relative">
               <TrainingPoster t={t} className="aspect-[4/3]" eager />
-              {s && <span className="absolute bottom-4 left-5"><DateBadge iso={s.starts_at} big /></span>}
+              {s && <span className="absolute top-4 left-5"><DateBadge iso={s.starts_at} big /></span>}
             </div>
             <div className="grid gap-4 p-6">
               <div className="flex items-center justify-between gap-3">
@@ -281,7 +277,7 @@ export function TrainingDetail() {
                     <Link to={`/formations/${t.slug}/inscription/${s.id}`} className="btn btn-primary shadow-orange">{s.status === 'full' ? "Rejoindre la liste d'attente" : 'Réserver ma place'}</Link>
                   ) : <p className="text-sm text-muted">Les inscriptions ouvrent bientôt. Revenez sur cette page ou écrivez-nous.</p>}
                 </>
-              ) : <p className="text-sm text-muted">Aucune session programmée. Inscrivez-vous à la newsletter, en bas de page, pour être prévenu.</p>}
+              ) : <p className="text-sm text-muted">Aucune session programmée pour le moment. Les nouvelles dates sont publiées sur cette page.</p>}
               {open.length > 1 && (
                 <div className="grid gap-2 border-t border-line pt-4 text-sm">
                   <span className="text-muted">Autres dates</span>

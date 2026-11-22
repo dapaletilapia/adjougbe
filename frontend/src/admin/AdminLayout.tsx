@@ -117,7 +117,7 @@ export default function AdminLayout() {
     { to: '/admin/blog', label: 'Contenu', icon: 'document' },
   ]
   return (
-    <div className="min-h-screen bg-paper md:grid md:grid-cols-[240px_1fr]">
+    <div className="min-h-screen bg-[var(--bg)] md:grid md:grid-cols-[240px_1fr]">
       <aside className="sticky top-0 hidden h-screen md:block">{sidebar}</aside>
       <div className="min-w-0 pb-24 md:pb-0">
         <main className="px-4 py-5 md:px-9 md:py-8"><Outlet /></main>
