@@ -206,10 +206,6 @@ function Footer() {
         <div>
           <Logo light />
           <p className="mt-5 max-w-[300px] text-[14.5px] leading-7 text-white/70">Livres, formations et contenus pour développer le leadership, depuis Abidjan.</p>
-          <div className="mt-5 flex gap-2.5">
-            {data?.whatsapp_number && <a href={`https://wa.me/${data.whatsapp_number}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-[17px] transition-colors hover:bg-[#25D366]"><i className="fi fi-brands-whatsapp leading-none" aria-hidden="true" /></a>}
-            {data?.contact_email && <a href={`mailto:${data.contact_email}`} aria-label="E-mail" className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/20"><Icon name="envelope" className="leading-none" /></a>}
-          </div>
         </div>
         <nav className={col} aria-label="Explorer">
           <b className="mb-1 text-[13px] tracking-[.08em] text-white/50">Explorer</b>
